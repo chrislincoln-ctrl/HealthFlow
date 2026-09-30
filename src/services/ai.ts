@@ -84,8 +84,8 @@ export function localBrief(situationText: string): string {
     situationText,
     '',
     'Prepared from the HealthFlow demo dataset. All figures are computed by the',
-    'deterministic calculation engine from hand-authored simulated data; no',
-    'external model was involved in producing these numbers.',
+    'deterministic calculation engine from the simulated demo data; no external',
+    'model was involved in producing these numbers.',
   ].join('\n');
 }
 

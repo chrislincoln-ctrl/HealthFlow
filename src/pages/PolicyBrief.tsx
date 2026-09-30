@@ -498,7 +498,11 @@ export default function PolicyBrief() {
                     </div>
                     <div className="flex justify-between gap-2">
                       <dt className="text-slate-450">Transfers planned</dt>
-                      <dd className="tabular font-semibold text-ink">{situation.recommendations.length}</dd>
+                      <dd className="tabular font-semibold text-ink">
+                  {situation.recommendations.length} shown of{' '}
+                  {inventory.filter((r) => stockOutDays(r, scenario.demandMultiplier) < r.reserveThresholdDays).length}{' '}
+                  lines below reserve
+                </dd>
                     </div>
                     <div className="flex justify-between gap-2">
                       <dt className="text-slate-450">Scenario</dt>
@@ -551,6 +555,9 @@ export default function PolicyBrief() {
                     // glued to the previous block and mis-pair bullet asterisks
                     // as emphasis.
                     .split(/\n\n|\n(?=\s*(?:#{1,4}\s|\d+\.\s|[-*]\s))/)
+                    // Horizontal rules were stripped inside BriefParagraph;
+                    // skip the empty blocks they leave behind.
+                    .filter((para) => para.trim().length > 0)
                     .map((para, i) => (
                     <BriefParagraph key={i} text={para} />
                   ))}
@@ -628,7 +635,12 @@ function BriefInline({ text }: { text: string }) {
 
 /** One paragraph of the brief: heading, list item, or body text. */
 function BriefParagraph({ text }: { text: string }) {
-  const trimmed = text.trim();
+  const trimmed = text
+    // Markdown horizontal rules (`---`, `***`) carry no meaning in this
+    // renderer — models and cached briefs emit them as section separators,
+    // so render nothing rather than a literal dash line.
+    .replace(/(?:^|\n)\s*(?:---+|\*\*\+)\s*(?=\n|$)/g, '\n')
+    .trim();
   // Headings: '###' or '#'-prefixed lines the model emits. The body often
   // follows on the next single line, so split it off and render separately.
   const headingMatch = trimmed.match(/^#{1,4}\s+(.*)$/s);
