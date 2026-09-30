@@ -97,19 +97,18 @@ export function phcsForDistrict(districtId: string): PhcRecord[] {
 
 /** PHC-level risk read-out (band derived from the same thresholds as districts). */
 export function phcRisk(p: PhcRecord): PhcRisk {
+  // Cover ratio = PHC stock ÷ the district's daily consumption for that
+  // line (the PHC layer scales STOCK by district share; demand stays the
+  // district rate) — same "stock ÷ mean daily demand" shape as the district
+  // engine, without re-running the forecast per PHC.
   let worstCover = Infinity;
   let worstMed: string | null = null;
   for (const [medicineId, stock] of Object.entries(p.medicineStock)) {
     const daily =
       inventory.find((r) => r.districtId === p.districtId && r.medicineId === medicineId)?.dailyConsumption ?? 0;
-    const share = p.medicineStock[medicineId] !== undefined ? 1 : 0;
-    void share;
-    const dailyAtPhc = daily; // district daily rate scaled at build time via stock share
-    const cover = stock / Math.max(1, dailyAtPhc * (stock / (p.medicineStock[medicineId] || 1)));
-    const simpleCover = stock / Math.max(1, daily);
-    const effective = Number.isFinite(cover) && cover > 0 ? Math.min(cover, simpleCover * 1.2) : simpleCover;
-    if (effective < worstCover) {
-      worstCover = effective;
+    const cover = stock / Math.max(1, daily);
+    if (cover < worstCover) {
+      worstCover = cover;
       worstMed = medicineId;
     }
   }

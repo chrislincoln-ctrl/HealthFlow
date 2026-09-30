@@ -8,7 +8,7 @@
 
 import type { ScenarioState } from '../types';
 import { districts, inventory, corridors } from '../data/districts';
-import { scenarioOf, daysOfCover, corridorDisrupted } from './calc';
+import { scenarioOf, daysOfCover, corridorDisrupted, surplusUnits } from './calc';
 
 export const RESILIENCE_WEIGHTS = {
   supplyRedundancy: 0.25,
@@ -32,7 +32,7 @@ export interface ResilienceComponent {
 
 export interface ResilienceIndex {
   score: number;
-  band: 'LOW' | 'MODERATE' | 'GOOD' | 'STRONG';
+  band: 'LOW' | 'MODERATE' | 'ADEQUATE' | 'STRONG';
   components: ResilienceComponent[];
   strongest: ResilienceComponent | null;
   weakest: ResilienceComponent | null;
@@ -40,7 +40,7 @@ export interface ResilienceIndex {
 
 function bandOf(score: number): ResilienceIndex['band'] {
   if (score >= 75) return 'STRONG';
-  if (score >= 60) return 'GOOD';
+  if (score >= 60) return 'ADEQUATE';
   if (score >= 45) return 'MODERATE';
   return 'LOW';
 }
@@ -105,7 +105,9 @@ export function computeResilienceIndex(
       if (corridorDisrupted(`${src.id}->${d.id}`, scen) || corridorDisrupted(`${d.id}->${src.id}`, scen)) return false;
       const rec = inventory.find((r) => r.districtId === src.id && r.medicineId === worst.rec.medicineId);
       if (!rec) return false;
-      const surplus = rec.currentStock - rec.reserveThresholdDays * rec.dailyConsumption;
+      // Same canonical surplusUnits definition the allocation engine uses
+      // (scenario-aware effective stock − reserve target).
+      const surplus = surplusUnits(rec, scen);
       return surplus >= 100;
     });
     if (alt) withAlt++;
