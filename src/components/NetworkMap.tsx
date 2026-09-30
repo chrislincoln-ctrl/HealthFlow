@@ -544,17 +544,21 @@ export function NetworkMap({
         </span>
       </div>
 
-      {/* Zoom controls — plus wheel zoom, drag pan and pinch on the canvas */}
+      {/* Zoom controls — plus wheel zoom, drag pan and pinch on the canvas.
+          Viewport semantics: a SMALLER viewBox width = more zoomed IN, so
+          "zoom out" GROWS the viewport (×BUTTON_ZOOM) and "zoom in" SHRINKS
+          it (×1/BUTTON_ZOOM) — same convention the wheel and pinch gestures
+          already use. */}
       <div className="absolute right-3 top-9 z-10 flex flex-col gap-1">
         <button
-          onClick={() => zoomByButton(1 / BUTTON_ZOOM)}
+          onClick={() => zoomByButton(BUTTON_ZOOM)}
           aria-label="Zoom out"
           className="flex h-6 w-6 items-center justify-center rounded bg-white/10 text-white/80 backdrop-blur-sm transition hover:bg-surface/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ai-light"
         >
           <Minus className="h-3 w-3" aria-hidden="true" />
         </button>
         <button
-          onClick={() => zoomByButton(BUTTON_ZOOM)}
+          onClick={() => zoomByButton(1 / BUTTON_ZOOM)}
           aria-label="Zoom in"
           className="flex h-6 w-6 items-center justify-center rounded bg-white/10 text-white/80 backdrop-blur-sm transition hover:bg-surface/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ai-light"
         >
