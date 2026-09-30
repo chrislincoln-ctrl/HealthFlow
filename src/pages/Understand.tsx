@@ -5,6 +5,7 @@ import { FactorBars } from '../components/FactorBars';
 import { DefTerm } from '../components/MetricGlossary';
 import { useScenario } from '../state/ScenarioContext';
 import { riskFactors, riskBand, daysOfCover, stockOutDays } from '../utils/calc';
+import { reserveTargetUnits } from '../utils/forecast';
 import { computeResilienceIndex } from '../utils/resilience';
 import { districts, inventory } from '../data/districts';
 import { districtAggregates, districtFacilitySignals } from '../data/phc';
@@ -104,7 +105,6 @@ export default function Understand() {
               <span className={`uppercase ${bandTone}`}>{risk?.band ?? '—'}</span>
             </h2>
             <p className="mt-1 text-[11px] leading-relaxed text-slate-450">
-              Composite risk{' '}
               <DefTerm term="Composite risk (0–100, higher = worse)" />
               {' '}for the worst line{' '}
               {worst ? (
@@ -132,7 +132,7 @@ export default function Understand() {
                 <span className="tabular font-semibold text-ink">
                   {stockOutDays(worst.r, scenario) < 45 ? `${stockOutDays(worst.r, scenario)}d` : 'beyond the 30-day window'}
                 </span>
-                ; reserve target {Math.round((worst.r.dailyConsumption * (1 + worst.r.demandGrowthPct / 100) * worst.r.reserveThresholdDays)).toLocaleString()} u
+                ; reserve target {reserveTargetUnits(worst.r, scenario.demandMultiplier).toLocaleString()} u
                 against {worst.r.currentStock.toLocaleString()} u on hand.
               </p>
             )}
@@ -176,7 +176,7 @@ export default function Understand() {
               District risk aggregates from a seeded synthetic PHC network —{' '}
               <span className="font-semibold text-ink">{signals.total}</span> facilities shown of{' '}
               {district.phcs} in the district ({agg.beds} beds, {agg.staffAvailable}/{agg.staffTotal} staff
-              available). <span className="font-semibold text-status-watch">{signals.elevated} elevated</span>,{' '}
+              available). <span className="font-semibold text-status-watch">{signals.elevated} of {signals.total} shown elevated</span>,{' '}
               <span className="font-semibold text-status-critical">
                 {signals.projectedBreach} projected to breach reserve
               </span>
@@ -189,7 +189,7 @@ export default function Understand() {
               />
             </div>
             <p className="mt-1 text-[10px] text-faint">
-              Share of modeled facilities elevated (band high or critical)
+              Share of shown facilities elevated (band high or critical)
             </p>
           </div>
 
