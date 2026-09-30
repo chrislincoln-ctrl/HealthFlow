@@ -347,7 +347,11 @@ export default function PolicyBrief() {
             </div>
             <div className="flex justify-between gap-2">
               <dt className="text-slate-450">Transfers recommended</dt>
-              <dd className="tabular font-semibold text-ink">{situation.recommendations.length}</dd>
+              <dd className="tabular font-semibold text-ink">
+                {situation.recommendations.length} shown of{' '}
+                {inventory.filter((r) => stockOutDays(r, scenario.demandMultiplier) < r.reserveThresholdDays).length}{' '}
+                lines below reserve
+              </dd>
             </div>
           </dl>
 
@@ -498,11 +502,7 @@ export default function PolicyBrief() {
                     </div>
                     <div className="flex justify-between gap-2">
                       <dt className="text-slate-450">Transfers planned</dt>
-                      <dd className="tabular font-semibold text-ink">
-                  {situation.recommendations.length} shown of{' '}
-                  {inventory.filter((r) => stockOutDays(r, scenario.demandMultiplier) < r.reserveThresholdDays).length}{' '}
-                  lines below reserve
-                </dd>
+                      <dd className="tabular font-semibold text-ink">{situation.recommendations.length}</dd>
                     </div>
                     <div className="flex justify-between gap-2">
                       <dt className="text-slate-450">Scenario</dt>

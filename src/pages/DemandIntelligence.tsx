@@ -3,8 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import {
   Area,
   CartesianGrid,
+  ComposedChart,
   Line,
-  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -88,23 +88,9 @@ export default function DemandIntelligence() {
     return rows;
   }, [forecast, depletion]);
 
-  // Explicit numeric domain for the log axis (log scales misbehave with the
-  // 'auto' string domain): floor at the smallest positive plotted value,
-  // ceiling above the largest — including the reserve target line.
-  const chartDomain = useMemo<[number, number]>(() => {
-    let min = Infinity;
-    let max = -Infinity;
-    for (const row of chartData) {
-      for (const v of [row.history, row.forecast, row.stock, ...(row.band ?? [])]) {
-        if (typeof v === 'number' && v > 0) {
-          if (v < min) min = v;
-          if (v > max) max = v;
-        }
-      }
-    }
-    if (!Number.isFinite(min) || !Number.isFinite(max)) return [1, 10];
-    return [Math.max(1, Math.floor(min * 0.8)), Math.ceil(Math.max(max, reserveTarget) * 1.1)];
-  }, [chartData, reserveTarget]);
+  /** Compact axis label for unit values (5,460 → 5.5k). */
+  const compactUnits = (v: number) =>
+    v >= 1000 ? `${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k` : String(Math.round(v));
 
   return (
     <div className="space-y-4">
@@ -190,16 +176,28 @@ export default function DemandIntelligence() {
           </div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
+              <ComposedChart data={chartData} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
                 <CartesianGrid stroke="var(--hf-line-soft)" vertical={false} />
                 <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'var(--hf-muted)' }} stroke="var(--hf-line)" interval={6} />
-                {/* Log-friendly scale: demand (~hundreds) and projected stock
-                    (thousands→0) share the chart, so a purely linear axis
-                    collapses the stock line into a near-vertical drop. The
-                    band is rendered on the demand scale. */}
+                {/* Two independent linear scales: demand and its uncertainty
+                    band on the left (~hundreds), projected stock and the
+                    reserve target on the right (thousands→0). One shared
+                    linear axis collapsed the stock line into a near-vertical
+                    drop against the demand series. */}
                 <YAxis
-                  scale="log"
-                  domain={chartDomain}
+                  yAxisId="demand"
+                  domain={[0, 'auto']}
+                  width={44}
+                  tickFormatter={compactUnits}
+                  tick={{ fontSize: 10, fill: 'var(--hf-muted)' }}
+                  stroke="var(--hf-line)"
+                />
+                <YAxis
+                  yAxisId="stock"
+                  orientation="right"
+                  domain={[0, Math.ceil((reserveTarget * 1.15) / 1000) * 1000]}
+                  width={44}
+                  tickFormatter={compactUnits}
                   tick={{ fontSize: 10, fill: 'var(--hf-muted)' }}
                   stroke="var(--hf-line)"
                 />
@@ -214,6 +212,7 @@ export default function DemandIntelligence() {
                   labelStyle={{ color: 'var(--hf-muted)' }}
                 />
                 <ReferenceLine
+                  yAxisId="demand"
                   x={`+${breachDay ?? horizon}`}
                   stroke="var(--hf-line)"
                   strokeDasharray="4 3"
@@ -224,8 +223,9 @@ export default function DemandIntelligence() {
                     position: 'insideTopRight',
                   }}
                 />
-                <Line dataKey="history" name="Historical demand" stroke="#33415C" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                <Line yAxisId="demand" dataKey="history" name="Historical demand" stroke="#33415C" strokeWidth={1.8} dot={false} isAnimationActive={false} />
                 <Area
+                  yAxisId="demand"
                   dataKey="band"
                   name="80% interval"
                   stroke="none"
@@ -234,20 +234,21 @@ export default function DemandIntelligence() {
                   className="text-ai/20"
                   isAnimationActive={false}
                 />
-                <Line dataKey="forecast" name="Forecast" stroke="#6A00F4" strokeWidth={2} strokeDasharray="5 3" dot={false} isAnimationActive={false} />
-                <Line dataKey="stock" name="Projected stock" stroke="#C53030" strokeWidth={1.6} dot={false} isAnimationActive={false} />
+                <Line yAxisId="demand" dataKey="forecast" name="Forecast" stroke="#6A00F4" strokeWidth={2} strokeDasharray="5 3" dot={false} isAnimationActive={false} />
+                <Line yAxisId="stock" dataKey="stock" name="Projected stock (right axis)" stroke="#C53030" strokeWidth={1.6} dot={false} isAnimationActive={false} />
                 <ReferenceLine
+                  yAxisId="stock"
                   y={reserveTarget}
                   stroke="#C53030"
                   strokeDasharray="6 4"
                   label={{
-                    value: `reserve target ${reserveTarget.toLocaleString()} u`,
+                    value: `reserve target ${reserveTarget.toLocaleString()} u (right axis)`,
                     fontSize: 10,
                     fill: 'var(--hf-muted)',
                     position: 'insideTopLeft',
                   }}
                 />
-              </LineChart>
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
           <p data-tour="tour-forecast-insight" className="mt-2 flex items-start gap-1.5 rounded bg-surface-2 px-3 py-2 text-[11px] leading-relaxed text-slate-450">
