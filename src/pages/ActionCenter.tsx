@@ -81,7 +81,9 @@ export default function ActionCenter() {
       {/* Queue summary */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {[
-          { label: 'Pending review', value: counts.pending, tone: 'text-ai-dark dark:text-ai-light' },
+          // Counts CREATED plans only — engine recommendations are listed
+          // (and counted) separately below, so the two can't be conflated.
+          { label: 'Recommended', value: counts.pending, tone: 'text-ai-dark dark:text-ai-light' },
           { label: 'Approved', value: counts.approved, tone: 'text-status-watch' },
           { label: 'In transit', value: counts.transit, tone: 'text-accent-dark dark:text-accent-light' },
           { label: 'Completed', value: counts.completed, tone: 'text-status-stable' },
@@ -95,7 +97,7 @@ export default function ActionCenter() {
 
       {/* Pending recommendations (from the shared allocation engine) */}
       <section className="rounded-lg border border-line bg-surface p-4 shadow-panel">
-        <h2 className="text-sm font-bold text-ink">Pending recommendations</h2>
+        <h2 className="text-sm font-bold text-ink">Engine recommendations</h2>
         <p className="mt-0.5 text-[11px] text-slate-450">
           Priority score = 50% destination urgency + 30% quantity gap + 20% transit speed — calculated factors, not an AI
           judgment.

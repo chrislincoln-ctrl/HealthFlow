@@ -334,14 +334,14 @@ function NetworkResilienceKpi() {
   const { appliedStock } = useInterventions();
   const idx = useMemo(() => computeResilienceIndex(scenario, appliedStock), [scenario, appliedStock]);
   const tone: 'positive' | 'neutral' | 'warning' | 'critical' =
-    idx.band === 'STRONG' || idx.band === 'GOOD' ? 'positive' : idx.band === 'MODERATE' ? 'warning' : 'critical';
+    idx.band === 'STRONG' || idx.band === 'ADEQUATE' ? 'positive' : idx.band === 'MODERATE' ? 'warning' : 'critical';
   return (
     <KpiCard
       label="Network resilience"
       animate
       value={idx.score}
       unit="/100"
-      detail={`${idx.band} · weakest: ${idx.weakest?.label ?? '—'}`}
+      detail={`${idx.band} · higher = greater resilience · weakest: ${idx.weakest?.label ?? '—'}`}
       tone={tone}
     />
   );
@@ -352,7 +352,7 @@ function ResiliencePanel() {
   const { appliedStock } = useInterventions();
   const idx = useMemo(() => computeResilienceIndex(scenario, appliedStock), [scenario, appliedStock]);
   const bandTone =
-    idx.band === 'STRONG' ? 'text-status-stable' : idx.band === 'GOOD' ? 'text-ink' : idx.band === 'MODERATE' ? 'text-status-watch' : 'text-status-critical';
+    idx.band === 'STRONG' ? 'text-status-stable' : idx.band === 'ADEQUATE' ? 'text-ink' : idx.band === 'MODERATE' ? 'text-status-watch' : 'text-status-critical';
 
   return (
     <section
@@ -366,8 +366,8 @@ function ResiliencePanel() {
             Network resilience
           </h2>
           <p className="text-[11px] text-slate-450">
-        Weighted mean of the six subscores — weights shown per row; score = Σ(value × weight). Prototype
-        assumptions, not a validated standard.
+        Weighted mean of the six subscores — weights shown per row; score = Σ(value × weight). Higher
+        score = greater resilience. Prototype assumptions, not a validated standard.
       </p>
         </div>
         <div className="text-right">
@@ -431,7 +431,7 @@ function StateSummaryPanel() {
           { label: 'Districts in network', value: String(s.districtCount) },
           { label: 'PHCs (synthetic layer)', value: s.phcCount.toLocaleString() },
           { label: 'Hospitals', value: String(s.hospitals) },
-          { label: 'Monitored lines', value: String(s.monitoredLines) },
+          { label: 'Active monitored lines', value: String(s.monitoredLines) },
           { label: 'Critical districts', value: String(critical), tone: 'critical' },
           { label: 'High districts', value: String(high), tone: 'warning' },
         ].map((k) => (
