@@ -1,0 +1,1 @@
+Introducing HealthFlow: predictive supply-chain command for a 23-district health network — it flags a stock-out five days out, moves stock from two sources, and drafts the executive brief. Built with React + Vite and a deterministic calc engine.

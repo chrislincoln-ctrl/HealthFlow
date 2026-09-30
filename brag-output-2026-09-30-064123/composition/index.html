@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1600, height=900">
+    <title>HealthFlow — Hero Teaser</title>
+    <script src="assets/vendor/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "InterVar";
+        src: url("assets/fonts/inter-var.woff2") format("woff2");
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1600px; height: 900px; overflow: hidden;
+        background: #0b1114;
+        font-family: "InterVar", sans-serif;
+        color: #f4f7f5;
+      }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; }
+      .clip { position: absolute; inset: 0; overflow: hidden; }
+      .scene-inner { position: absolute; inset: 0; }
+
+      /* ── Atmosphere + vignette ─────────────────────────────────────── */
+      #atmo-wrap { position: absolute; inset: 0; opacity: 0; }
+      #atmo { position: absolute; inset: 0;
+        background: radial-gradient(920px 640px at 52% 46%, rgba(20, 67, 42, 0.6) 0%, rgba(11, 17, 20, 0) 72%); }
+      #vignette { position: absolute; inset: 0;
+        background: radial-gradient(1150px 760px at 50% 44%, rgba(11,17,20,0) 0%, rgba(11,17,20,0.62) 82%); }
+
+      /* ── Phrase typography (large, editorial, restrained) ──────────── */
+      .phrase-block { position: absolute; left: 110px; top: 118px; max-width: 1380px; }
+      .phrase { font-size: 88px; font-weight: 800; letter-spacing: -0.025em; line-height: 1.06; }
+      .phrase .accent-red { color: #f08578; }
+      .phrase .accent-violet { color: #b98cff; }
+      .phrase .accent-peach { color: #ffd6a5; }
+      .phrase-kicker { font-size: 19px; font-weight: 700; letter-spacing: 0.22em; color: #7fd8d4;
+        text-transform: uppercase; margin-bottom: 18px; }
+
+      /* ── Brand resolution ──────────────────────────────────────────── */
+      #brand-glow-wrap { position: absolute; inset: 0; opacity: 0; }
+      #brand-glow { position: absolute; left: 50%; top: 46%; width: 880px; height: 480px;
+        margin: -240px 0 0 -440px;
+        background: radial-gradient(closest-side, rgba(55, 192, 187, 0.2) 0%, rgba(55, 192, 187, 0) 70%); }
+      .brand-center { position: absolute; left: 0; right: 0; top: 372px; display: flex;
+        flex-direction: column; align-items: center; gap: 30px; }
+      .brand-row { display: flex; align-items: center; gap: 26px; }
+      #logo-mark { width: 86px; height: 86px; border-radius: 20px; background: #37c0bb;
+        display: flex; align-items: center; justify-content: center; }
+      #brand-name { font-size: 112px; font-weight: 800; letter-spacing: -0.03em; }
+      #tagline { display: flex; gap: 24px; font-size: 34px; font-weight: 700; letter-spacing: -0.01em; }
+      #tagline .t1 { color: #b98cff; } #tagline .t2 { color: #f4f7f5; } #tagline .t3 { color: #ffd6a5; }
+
+      /* ── Loop seam ─────────────────────────────────────────────────── */
+      #seam { position: absolute; inset: 0; background: #06090c; opacity: 0; }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-a000" id="root" data-composition-id="main" data-start="0" data-duration="19.5" data-fps="30" data-width="1600" data-height="900">
+
+      <!-- ═══ THE NETWORK — persistent through-line (0 – 19.5) ═══ -->
+      <section data-hf-id="hf-a001" id="sec-net" class="clip" data-start="0" data-duration="19.5" data-track-index="0">
+        <div data-hf-id="hf-a002" class="scene-inner" id="net-inner">
+          <div data-hf-id="hf-a003" id="atmo-wrap"><div data-hf-id="hf-a004" id="atmo"></div></div>
+
+          <svg data-hf-id="hf-a005" id="net" viewBox="0 0 1600 900" style="position:absolute; inset:0; width:100%; height:100%;">
+            <!-- base corridors (draw in during the reveal) -->
+            <g data-hf-id="hf-a006" id="corridors" fill="none" stroke="#37c0bb" stroke-opacity="0.26" stroke-width="2">
+              <path data-hf-id="hf-a007" class="corr" id="c1"  d="M300,260 Q360,286 420,330" />
+              <path data-hf-id="hf-a008" class="corr" id="c2"  d="M420,330 Q476,412 560,520" />
+              <path data-hf-id="hf-a009" class="corr" id="c3"  d="M420,330 Q586,278 760,250" />
+              <path data-hf-id="hf-a010" class="corr" id="c4"  d="M760,250 Q828,306 880,380" />
+              <path data-hf-id="hf-a011" class="corr" id="c5"  d="M880,380 Q736,438 560,520" />
+              <path data-hf-id="hf-a012" class="corr" id="c6"  d="M880,380 Q930,258 980,150" />
+              <path data-hf-id="hf-a013" class="corr" id="c7"  d="M980,150 Q1080,158 1180,180" />
+              <path data-hf-id="hf-a014" class="corr" id="c8"  d="M1180,180 Q1140,238 1080,300" />
+              <path data-hf-id="hf-a015" class="corr" id="c9"  d="M1080,300 Q1210,332 1320,380" />
+              <path data-hf-id="hf-a016" class="corr" id="c10" d="M1320,380 Q1288,468 1230,560" />
+              <path data-hf-id="hf-a017" class="corr" id="c11" d="M1230,560 Q1330,556 1420,560" />
+              <path data-hf-id="hf-a018" class="corr" id="c12" d="M1230,560 Q1300,642 1350,720" />
+              <path data-hf-id="hf-a019" class="corr" id="c13" d="M900,660 Q1068,618 1230,560" />
+              <path data-hf-id="hf-a020" class="corr" id="c14" d="M700,700 Q806,686 900,660" />
+              <path data-hf-id="hf-a021" class="corr" id="c15" d="M380,620 Q548,668 700,700" />
+              <path data-hf-id="hf-a022" class="corr" id="c16" d="M380,620 Q456,578 560,520" />
+              <path data-hf-id="hf-a023" class="corr" id="c17" d="M700,700 Q638,616 560,520" />
+            </g>
+
+            <!-- risk propagation paths (highlight corridors from the vulnerable node) -->
+            <g data-hf-id="hf-a024" id="risk-corridors" fill="none" stroke="#e05252" stroke-opacity="0" stroke-width="2.6">
+              <path data-hf-id="hf-a025" class="rcorr" id="r1" d="M560,520 Q476,412 420,330" />
+              <path data-hf-id="hf-a026" class="rcorr" id="r2" d="M560,520 Q736,438 880,380" />
+              <path data-hf-id="hf-a027" class="rcorr" id="r3" d="M560,520 Q456,578 380,620" />
+              <path data-hf-id="hf-a028" class="rcorr" id="r4" d="M560,520 Q638,616 700,700" />
+            </g>
+
+            <!-- traveling resource-flow paths (surplus → vulnerable) -->
+            <g data-hf-id="hf-a029" id="flow-paths" fill="none" stroke="#37c0bb" stroke-width="3.4" stroke-linecap="round" stroke-opacity="0">
+              <path data-hf-id="hf-a030" class="fpath" id="f1" d="M1080,300 Q826,304 560,520" stroke-dasharray="10 16" />
+              <path data-hf-id="hf-a031" class="fpath" id="f2" d="M1230,560 Q896,610 560,520" stroke-dasharray="10 16" />
+              <path data-hf-id="hf-a032" class="fpath" id="f3" d="M900,660 Q722,644 560,520" stroke-dasharray="10 16" />
+            </g>
+
+            <!-- intelligence sweep -->
+            <circle data-hf-id="hf-a033" id="sweep-ring" cx="860" cy="440" r="70" fill="none" stroke="#9b4dff" stroke-width="2.5" opacity="0" style="transform-origin: 860px 440px;" />
+            <circle data-hf-id="hf-a034" id="sweep-ring-2" cx="860" cy="440" r="70" fill="none" stroke="#9b4dff" stroke-width="1.5" opacity="0" style="transform-origin: 860px 440px;" />
+
+            <!-- nodes (facilities) -->
+            <g data-hf-id="hf-a035" id="nodes">
+              <circle data-hf-id="hf-a036" class="node" cx="300"  cy="260" r="7"  fill="#356b52" style="transform-origin: 300px 260px;" />
+              <circle data-hf-id="hf-a037" class="node" cx="420"  cy="330" r="8"  fill="#356b52" style="transform-origin: 420px 330px;" />
+              <circle data-hf-id="hf-a038" class="node" cx="760"  cy="250" r="7"  fill="#356b52" style="transform-origin: 760px 250px;" />
+              <circle data-hf-id="hf-a039" class="node" cx="880"  cy="380" r="8"  fill="#356b52" style="transform-origin: 880px 380px;" />
+              <circle data-hf-id="hf-a040" class="node" cx="980"  cy="150" r="7"  fill="#356b52" style="transform-origin: 980px 150px;" />
+              <circle data-hf-id="hf-a041" class="node" cx="1180" cy="180" r="7"  fill="#356b52" style="transform-origin: 1180px 180px;" />
+              <circle data-hf-id="hf-a042" class="node" cx="1320" cy="380" r="7"  fill="#356b52" style="transform-origin: 1320px 380px;" />
+              <circle data-hf-id="hf-a043" class="node" cx="1420" cy="560" r="7"  fill="#356b52" style="transform-origin: 1420px 560px;" />
+              <circle data-hf-id="hf-a044" class="node" cx="1350" cy="720" r="7"  fill="#356b52" style="transform-origin: 1350px 720px;" />
+              <circle data-hf-id="hf-a045" class="node" cx="380"  cy="620" r="8"  fill="#356b52" style="transform-origin: 380px 620px;" />
+              <circle data-hf-id="hf-a046" class="node" cx="700"  cy="700" r="8"  fill="#356b52" style="transform-origin: 700px 700px;" />
+              <!-- surplus facilities (illuminate peach) -->
+              <circle data-hf-id="hf-a047" class="node big" id="s1-node" cx="1080" cy="300" r="11" fill="#356b52" style="transform-origin: 1080px 300px;" />
+              <circle data-hf-id="hf-a048" class="node big" id="s2-node" cx="1230" cy="560" r="11" fill="#356b52" style="transform-origin: 1230px 560px;" />
+              <circle data-hf-id="hf-a049" class="node big" id="s3-node" cx="900"  cy="660" r="11" fill="#356b52" style="transform-origin: 900px 660px;" />
+              <!-- the vulnerable facility -->
+              <circle data-hf-id="hf-a050" class="node" id="v-node" cx="560" cy="520" r="12" fill="#356b52" style="transform-origin: 560px 520px;" />
+            </g>
+
+            <!-- glows -->
+            <circle data-hf-id="hf-a051" id="v-halo" cx="560" cy="520" r="150" fill="url(#red-halo)" opacity="0" style="transform-origin: 560px 520px;" />
+            <circle data-hf-id="hf-a052" class="sglow" id="s1-glow" cx="1080" cy="300" r="90" fill="url(#peach-glow)" opacity="0" style="transform-origin: 1080px 300px;" />
+            <circle data-hf-id="hf-a053" class="sglow" id="s2-glow" cx="1230" cy="560" r="90" fill="url(#peach-glow)" opacity="0" style="transform-origin: 1230px 560px;" />
+            <circle data-hf-id="hf-a054" class="sglow" id="s3-glow" cx="900"  cy="660" r="90" fill="url(#peach-glow)" opacity="0" style="transform-origin: 900px 660px;" />
+
+            <!-- risk propagation pulses (neighbor rings) -->
+            <circle data-hf-id="hf-a055" class="ppulse" id="pp1" cx="420" cy="330" r="16" fill="none" stroke="#e05252" stroke-width="2.5" opacity="0" style="transform-origin: 420px 330px;" />
+            <circle data-hf-id="hf-a056" class="ppulse" id="pp2" cx="880" cy="380" r="16" fill="none" stroke="#e05252" stroke-width="2.5" opacity="0" style="transform-origin: 880px 380px;" />
+            <circle data-hf-id="hf-a057" class="ppulse" id="pp3" cx="380" cy="620" r="16" fill="none" stroke="#e05252" stroke-width="2.5" opacity="0" style="transform-origin: 380px 620px;" />
+
+            <!-- atmospheric motes -->
+            <g data-hf-id="hf-a058" id="motes" data-layout-allow-overflow="">
+              <circle data-hf-id="hf-a059" class="mote" cx="240"  cy="480" r="2.4" fill="#7fd8d4" opacity="0.2" />
+              <circle data-hf-id="hf-a060" class="mote" cx="500"  cy="180" r="1.8" fill="#7fd8d4" opacity="0.16" />
+              <circle data-hf-id="hf-a061" class="mote" cx="740"  cy="560" r="2.8" fill="#ffd6a5" opacity="0.14" />
+              <circle data-hf-id="hf-a062" class="mote" cx="1020" cy="420" r="2"   fill="#7fd8d4" opacity="0.22" />
+              <circle data-hf-id="hf-a063" class="mote" cx="1260" cy="260" r="2.4" fill="#ffd6a5" opacity="0.16" />
+              <circle data-hf-id="hf-a064" class="mote" cx="1440" cy="430" r="1.8" fill="#7fd8d4" opacity="0.18" />
+              <circle data-hf-id="hf-a065" class="mote" cx="620"  cy="760" r="2.2" fill="#7fd8d4" opacity="0.15" />
+              <circle data-hf-id="hf-a066" class="mote" cx="1120" cy="740" r="2.6" fill="#ffd6a5" opacity="0.13" />
+              <circle data-hf-id="hf-a067" class="mote" cx="180"  cy="700" r="2"   fill="#7fd8d4" opacity="0.2" />
+              <circle data-hf-id="hf-a068" class="mote" cx="880"  cy="120" r="1.6" fill="#7fd8d4" opacity="0.18" />
+            </g>
+
+            <defs data-hf-id="hf-a069">
+              <radialGradient data-hf-id="hf-a070" id="red-halo">
+                <stop data-hf-id="hf-a071" offset="0%" stop-color="#e05252" stop-opacity="0.55" />
+                <stop data-hf-id="hf-a072" offset="55%" stop-color="#c53030" stop-opacity="0.22" />
+                <stop data-hf-id="hf-a073" offset="100%" stop-color="#c53030" stop-opacity="0" />
+              </radialGradient>
+              <radialGradient data-hf-id="hf-a074" id="peach-glow">
+                <stop data-hf-id="hf-a075" offset="0%" stop-color="#ffd6a5" stop-opacity="0.5" />
+                <stop data-hf-id="hf-a076" offset="100%" stop-color="#ffd6a5" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+          </svg>
+
+          <div data-hf-id="hf-a077" id="vignette" data-layout-allow-occlusion=""></div>
+        </div>
+      </section>
+
+      <!-- ═══ PHRASE 1 — PREDICT SHORTAGES. (4.2 – 8.6) ═══ -->
+      <section data-hf-id="hf-a080" id="sec-p1" class="clip" data-start="4.2" data-duration="4.4" data-track-index="1">
+        <div data-hf-id="hf-a081" class="scene-inner" id="p1-inner" data-layout-allow-overlap="">
+          <div data-hf-id="hf-a082" class="phrase-block">
+            <p data-hf-id="hf-a083" class="phrase-kicker">The network senses it first</p>
+            <h1 data-hf-id="hf-a084" class="phrase">PREDICT <span data-hf-id="hf-a085" class="accent-red">SHORTAGES.</span></h1>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ PHRASE 2 — MOVE RESOURCES. (8.6 – 12.8) ═══ -->
+      <section data-hf-id="hf-a090" id="sec-p2" class="clip" data-start="8.6" data-duration="4.2" data-track-index="2">
+        <div data-hf-id="hf-a091" class="scene-inner" id="p2-inner" data-layout-allow-overlap="">
+          <div data-hf-id="hf-a092" class="phrase-block">
+            <p data-hf-id="hf-a093" class="phrase-kicker">Intelligence finds the surplus</p>
+            <h1 data-hf-id="hf-a094" class="phrase">MOVE <span data-hf-id="hf-a095" class="accent-violet">RESOURCES.</span></h1>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ PHRASE 3 — PROTECT CARE. (12.8 – 14.7) ═══ -->
+      <section data-hf-id="hf-a100" id="sec-p3" class="clip" data-start="12.8" data-duration="3.0" data-track-index="3">
+        <div data-hf-id="hf-a101" class="scene-inner" id="p3-inner" data-layout-allow-overlap="">
+          <div data-hf-id="hf-a102" class="phrase-block">
+            <p data-hf-id="hf-a103" class="phrase-kicker">The network stabilizes</p>
+            <h1 data-hf-id="hf-a104" class="phrase">PROTECT <span data-hf-id="hf-a105" class="accent-peach">CARE.</span></h1>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ BRAND RESOLUTION (14.7 – 19.5) — extended hold for a longer lock ═══ -->
+      <section data-hf-id="hf-a110" id="sec-brand" class="clip" data-start="14.7" data-duration="4.8" data-track-index="4">
+        <div data-hf-id="hf-a111" class="scene-inner" id="brand-inner" data-layout-allow-overlap="">
+          <div data-hf-id="hf-a112" id="brand-glow-wrap"><div data-hf-id="hf-a113" id="brand-glow"></div></div>
+          <div data-hf-id="hf-a114" class="brand-center">
+            <div data-hf-id="hf-a115" class="brand-row">
+              <div data-hf-id="hf-a116" id="logo-mark">
+                <svg data-hf-id="hf-a117" viewBox="0 0 48 48" style="width:52px; height:52px;">
+                  <path data-hf-id="hf-a118" d="M4,26 L14,26 L18,14 L24,36 L29,20 L33,26 L44,26" fill="none" stroke="#08251a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
+              <div data-hf-id="hf-a119" id="brand-name">HealthFlow</div>
+            </div>
+            <div data-hf-id="hf-a120" id="tagline">
+              <span data-hf-id="hf-a121" class="t1">Predict shortages.</span>
+              <span data-hf-id="hf-a122" class="t2">Move resources.</span>
+              <span data-hf-id="hf-a123" class="t3">Protect care.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ AUDIO ═══ -->
+      <audio data-hf-id="hf-a130" id="music" src="assets/music/happy-beats-business-moves-vol-12-by-ende-dot-app.mp3" data-start="0" data-duration="19.5" data-track-index="10" data-automation="{&quot;version&quot;:1,&quot;lanes&quot;:[{&quot;target&quot;:&quot;volume&quot;,&quot;points&quot;:[{&quot;t&quot;:0,&quot;v&quot;:0.06},{&quot;t&quot;:0.8,&quot;v&quot;:0.3},{&quot;t&quot;:18.4,&quot;v&quot;:0.3},{&quot;t&quot;:19.4,&quot;v&quot;:0}]}]}""></audio>
+      <audio data-hf-id="hf-a131" id="sfx-risk" src="assets/sfx/interface/drop_001.ogg" data-start="4.6" data-track-index="11" data-volume="0.45"></audio>
+      <audio data-hf-id="hf-a132" id="sfx-sweep" src="assets/sfx/interface/bong_001.ogg" data-start="8.3" data-track-index="12" data-volume="0.4"></audio>
+      <audio data-hf-id="hf-a133" id="sfx-brand" src="assets/sfx/impact/impactSoft_medium_001.ogg" data-start="18.56" data-track-index="13" data-volume="0.5"></audio>
+
+      <div data-hf-id="hf-a140" id="seam" data-layout-allow-occlusion=""></div>
+    </div>
+
+    <script src="assets/music/audio-data.js"></script>
+    <script>
+      const FPS = 30;
+      const DUR = 19.5;
+
+      /* SVG line-draw setup: measure once, at build time (seek-safe) */
+      function dashSetup(sel) {
+        const el = document.querySelector(sel);
+        const len = el.getTotalLength();
+        if (!el.getAttribute("stroke-dasharray")) el.style.strokeDasharray = String(len);
+        el.style.strokeDashoffset = String(len);
+        return len;
+      }
+      const corrLens = [...document.querySelectorAll("#corridors .corr")].map((el) => ({ el, len: el.getTotalLength() }));
+
+      const tl = gsap.timeline({ paused: true });
+
+      /* ═══ SCENE 1 — atmospheric network reveal (0 – 4.2) ═══ */
+      tl.fromTo("#atmo-wrap", { opacity: 0 }, { opacity: 0.85, duration: 1.4, ease: "power1.out" }, 0.1);
+      tl.fromTo("#net", { scale: 1.045, transformOrigin: "50% 46%" }, { scale: 1, duration: 5.2, ease: "power1.out" }, 0);
+      // facility nodes breathe in, one by one
+      tl.fromTo(".node", { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.55, ease: "power2.out", stagger: 0.13 }, 0.5);
+      // corridors draw between neighbors
+      corrLens.forEach((c, i) => {
+        tl.fromTo(c.el, { strokeDashoffset: c.len, strokeOpacity: 0 }, { strokeDashoffset: 0, strokeOpacity: 0.26, duration: 0.7, ease: "power1.inOut" }, 1.25 + i * 0.14);
+      });
+      // motes drift (finite yoyo repeats — seek-safe)
+      document.querySelectorAll(".mote").forEach((m, i) => {
+        const d = 3 + (i % 4) * 0.55;
+        tl.fromTo(m, { y: 0 }, { y: i % 2 ? -14 - (i % 3) * 5 : 12 + (i % 3) * 6, duration: d, ease: "sine.inOut", yoyo: true, repeat: Math.min(5, Math.floor(17 / d)) }, 0.4 + i * 0.2);
+      });
+
+      /* ═══ SCENE 2 — risk emerges (4.2 – 8.2) ═══ */
+      tl.to("#v-node", { attr: { fill: "#e05252" }, duration: 0.5, ease: "power1.inOut" }, 4.6);
+      tl.fromTo("#v-halo", { opacity: 0, scale: 0.45 }, { opacity: 1, scale: 1.12, duration: 1.1, ease: "power2.out" }, 4.6);
+      // finite halo pulse: 3 cycles
+      tl.fromTo("#v-halo", { scale: 1.0 }, { scale: 1.16, duration: 0.9, ease: "sine.inOut", yoyo: true, repeat: 3 }, 5.4);
+      // risk propagates outward along corridors
+      tl.to("#r1", { strokeOpacity: 0.55, duration: 0.4 }, 5.6);
+      tl.fromTo("#pp1", { opacity: 0.7, scale: 0.5 }, { opacity: 0, scale: 2.2, duration: 0.9, ease: "power1.out" }, 5.7);
+      tl.to("#r2", { strokeOpacity: 0.55, duration: 0.4 }, 6.1);
+      tl.fromTo("#pp2", { opacity: 0.7, scale: 0.5 }, { opacity: 0, scale: 2.2, duration: 0.9, ease: "power1.out" }, 6.2);
+      tl.to("#r3", { strokeOpacity: 0.55, duration: 0.4 }, 6.6);
+      tl.fromTo("#pp3", { opacity: 0.7, scale: 0.5 }, { opacity: 0, scale: 2.2, duration: 0.9, ease: "power1.out" }, 6.7);
+      tl.to("#r4", { strokeOpacity: 0.5, duration: 0.4 }, 7.1);
+
+      /* ═══ SCENE 3 — intelligence & resource flow (8.0 – 12.4) ═══ */
+      // the thinking moment: a violet sweep ripples outward
+      tl.fromTo("#sweep-ring", { opacity: 0.8, scale: 0.25 }, { opacity: 0, scale: 2.7, duration: 1.7, ease: "power1.out" }, 8.3);
+      tl.fromTo("#sweep-ring-2", { opacity: 0.5, scale: 0.25 }, { opacity: 0, scale: 2.1, duration: 1.9, ease: "power1.out" }, 8.55);
+      // surplus facilities illuminate (peach)
+      tl.to("#s1-glow", { opacity: 1, duration: 0.5 }, 8.95);
+      tl.to("#s1-node", { attr: { fill: "#ffd6a5" }, duration: 0.4 }, 8.95);
+      tl.to("#s2-glow", { opacity: 1, duration: 0.5 }, 9.3);
+      tl.to("#s3-glow", { opacity: 1, duration: 0.5 }, 9.65);
+      // resource flows travel along the corridors (finite dash cycles)
+      tl.to("#flow-paths", { strokeOpacity: 0.92, duration: 0.5 }, 8.95);
+      ["#f1", "#f2", "#f3"].forEach((id, i) => {
+        tl.fromTo(id, { strokeDashoffset: 26 }, { strokeDashoffset: 0, duration: 0.85, ease: "none", repeat: 3 }, 9.0 + i * 0.35);
+      });
+      // the vulnerable point begins to recover as help arrives
+      tl.to("#v-halo", { scale: 0.6, duration: 2.6, ease: "power1.inOut" }, 9.6);
+
+      /* ═══ SCENE 4 — stabilization (12.2 – 15.6) ═══ */
+      tl.to("#v-halo", { opacity: 0, scale: 0.4, duration: 1.0, ease: "power1.out" }, 12.5);
+      tl.to("#v-node", { attr: { fill: "#37c0bb" }, duration: 0.6, ease: "power1.inOut" }, 12.9);
+      // corridors calm back to structural teal
+      ["#r1", "#r2", "#r3", "#r4"].forEach((id, i) => {
+        tl.to(id, { strokeOpacity: 0, duration: 0.5 }, 12.9 + i * 0.14);
+      });
+      tl.to("#flow-paths", { strokeOpacity: 0, duration: 0.6 }, 12.3);
+      tl.to("#s1-glow, #s2-glow, #s3-glow", { opacity: 0.45, duration: 0.8 }, 13.1);
+
+      /* ═══ SCENE 5 — extended brand resolution (14.7 – 19.5) ═══
+         The brand row lands on the 18.56s strong beat and holds; the
+         loop seam is a long exhale into near-black, so the final frame
+         matches the opening darkness and the hero loop is seamless. */
+      tl.to("#net-inner", { opacity: 0.32, duration: 1.1, ease: "power1.inOut" }, 14.75);
+      tl.fromTo("#brand-inner", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power1.out" }, 14.9);
+      tl.fromTo(".brand-row", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: "back.out(1.3)" }, 18.0);
+      tl.fromTo("#tagline .t1", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 18.45);
+      tl.fromTo("#tagline .t2", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 18.65);
+      tl.fromTo("#tagline .t3", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 18.85);
+      // loop seam: longer + darker settle for an imperceptible restart
+      tl.to("#seam", { opacity: 1, duration: 0.75, ease: "power1.in" }, 18.75);
+
+      /* ═══ Audio-reactive: subtle — pre-extracted RMS/bass breathes three
+             decoratives (atmosphere, brand glow). No other tweens touch
+             these elements' opacity. ═══ */
+      tl.fromTo("#brand-glow-wrap", { opacity: 0 }, { opacity: 0.7, duration: 0.8, ease: "power1.out" }, 15.0);
+      const frames = window.AUDIO_DATA.frames;
+      for (let f = 0; f < Math.ceil(DUR * FPS); f++) {
+        tl.call(
+          (function (fr) {
+            return function () {
+              const rms = fr ? fr.rms : 0;
+              const bass = fr ? fr.bands[0] : 0;
+              gsap.set("#atmo", { opacity: 0.45 + rms * 0.4 });
+              gsap.set("#brand-glow", { opacity: 0.35 + rms * 0.5 });
+            };
+          })(frames[f]),
+          [],
+          f / FPS
+        );
+      }
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

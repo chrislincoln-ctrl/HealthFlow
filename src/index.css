@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Centralized theme: every semantic surface/text/border color is a CSS
+ * variable. `:root` = light (the original design), `html.dark` = the dark
+ * healthcare-operations theme. Components use Tailwind semantic tokens
+ * (bg-surface, text-ink, border-line, …) and NEVER light/dark conditionals —
+ * switching the class re-themes the entire app in one paint.
+ */
+:root {
+  --hf-canvas: #f5f7fa;
+  --hf-surface: #ffffff;
+  --hf-surface-2: #edf1f6;   /* subtle wells inside cards (navy-50) */
+  --hf-elevated: #ffffff;    /* popovers, tooltips, modals */
+  --hf-line: #d6dee8;        /* borders (navy-100) */
+  --hf-line-soft: #edf1f6;
+  --hf-ink: #1b2733;         /* primary text */
+  --hf-muted: #64748b;       /* secondary text (slate-450) */
+  --hf-faint: #d6dee8;       /* icons / dividers on light (navy-100 as fg) */
+  --hf-shadow: 14, 48, 30;   /* shadow tint rgb (chrome-dark) */
+}
+
+html.dark {
+  --hf-canvas: #0b1114;
+  --hf-surface: #111c21;
+  --hf-surface-2: #162229;
+  --hf-elevated: #162229;
+  --hf-line: #26363d;
+  --hf-line-soft: #1d2b32;
+  --hf-ink: #f4f7f5;
+  --hf-muted: #a8b7b0;
+  --hf-faint: #3d5058;
+  --hf-shadow: 0, 0, 0;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    /* 180ms color transition on the theme swap — short enough to feel
+       instant, long enough to avoid a hard flash. */
+    transition: background-color 180ms ease, color 180ms ease;
+  }
+
+  body {
+    background-color: var(--hf-canvas);
+    color: var(--hf-ink);
+    overflow-x: clip; /* defensive: no horizontal scroll at any width */
+    transition: background-color 180ms ease, color 180ms ease;
+  }
+
+  ::selection {
+    background-color: rgb(14 124 123 / 0.25);
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/*
+ * Guided-tour card entrance: gentle settle — opacity 0→1 with a small 8px
+ * rise, ~200ms ease-out (restrained by design: opacity + transform ONLY, no
+ * large slides, no bounce). The card's final position is locked before this
+ * animation starts, so the card settles INTO place rather than traveling to
+ * it. Outer positioning uses transform: translate3d(...) inline; this keyframe
+ * animation runs on the INNER wrapper so the two never fight.
+ */
+@keyframes tour-card-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.tour-card-in {
+  animation: tour-card-in 200ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-card-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * Header logo: seamless ECG waveform scroll.
+ * The SVG path is two identical 12-unit tiles inside a 24-unit clipped
+ * viewport; translating the track by exactly one tile width (-12 user units)
+ * loops perfectly because tile start/end sit at the same baseline height and
+ * angle. The teal square and wordmark stay static — only the line moves.
+ */
+.ecg-track {
+  animation: ecg-scroll 2.6s linear infinite;
+  will-change: transform;
+}
+
+@keyframes ecg-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-12px); /* exactly one tile width */
+  }
+}
+
+/*
+ * Subtle glint: the line brightens exactly while the spike crosses the icon's
+ * center. The spike is centered in its tile, so tile two crosses x=12 at 50%
+ * of the cycle. Duration MUST match .ecg-track or the glint drifts out of
+ * sync with the transform.
+ */
+.ecg-line {
+  animation: ecg-glint 2.6s linear infinite;
+}
+
+@keyframes ecg-glint {
+  0%,
+  38%,
+  62%,
+  100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ecg-track,
+  .ecg-line {
+    animation: none;
+  }
+  .ecg-line {
+    opacity: 1;
+  }
+}
+
+/* Thin, unobtrusive scrollbars — themed with the surfaces. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--hf-line) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--hf-line);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}

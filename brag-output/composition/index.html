@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>HealthFlow — Brag</title>
+    <script src="assets/vendor/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "InterVar";
+        src: url("assets/fonts/inter-var.woff2") format("woff2");
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px; height: 1080px; overflow: hidden;
+        background: #0b1114;
+        font-family: "InterVar", sans-serif;
+        color: #f4f7f5;
+      }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; }
+      .clip { position: absolute; inset: 0; overflow: hidden; }
+      .scene-inner { position: absolute; inset: 0; }
+
+      .tabular { font-variant-numeric: tabular-nums; }
+
+      /* ── Loop strip (recurring 8-stage device) ───────────────────────── */
+      .loopstrip { position: absolute; top: 54px; left: 90px; right: 90px; display: flex; gap: 10px; }
+      /* Single text span per chip; the lit state is an instant state-lock
+         (.on) plus a small scale pop — no mid-fade contrast frame. */
+      .ls-chip { padding: 8px 18px; border-radius: 999px; border: 1px solid #26363d;
+                 font-size: 18px; font-weight: 700; letter-spacing: 0.06em; color: #a8b7b0; background: rgba(17,28,33,0.55); }
+      .ls-chip.on { background: #37c0bb; border-color: #37c0bb; color: #08251a; font-weight: 800; }
+
+      .kicker { font-size: 20px; font-weight: 700; letter-spacing: 0.18em; color: #5fa8a7; text-transform: uppercase; }
+      .scene-title { font-size: 44px; font-weight: 800; letter-spacing: -0.02em; color: #f4f7f5; }
+      .scene-sub { font-size: 21px; color: #a8b7b0; }
+
+      .card { background: #111c21; border: 1px solid #26363d; border-radius: 18px; }
+
+      /* ── Scene 1: map ────────────────────────────────────────────────── */
+      #map-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+      #map-vignette { position: absolute; inset: 0;
+        background: radial-gradient(1100px 700px at 72% 40%, rgba(14,48,30,0) 0%, rgba(11,17,20,0.55) 78%),
+                    linear-gradient(0deg, rgba(8,14,17,0.82) 0%, rgba(8,14,17,0.12) 45%, rgba(8,14,17,0.55) 100%); }
+      #map-bottomfade { position: absolute; left: 0; right: 0; bottom: 0; height: 380px;
+        background: linear-gradient(0deg, rgba(8,14,17,0.88) 8%, rgba(8,14,17,0) 100%); }
+      /* Node decoratives: positioned with left/top + negative margins (never CSS
+         transform — GSAP scales #ring and #node-dot on the same property). */
+      #halo { position: absolute; left: 1190px; top: 454px; margin: -170px 0 0 -170px; width: 340px; height: 340px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(224,82,82,0.5) 0%, rgba(224,82,82,0) 62%); opacity: 0.4; }
+      #ring { position: absolute; left: 1190px; top: 454px; margin: -60px 0 0 -60px; width: 120px; height: 120px; border-radius: 50%;
+        border: 4px solid #e05252; opacity: 0.9; }
+      #node-dot { position: absolute; left: 1190px; top: 454px; margin: -13px 0 0 -13px; width: 26px; height: 26px; border-radius: 50%; background: #e05252;
+        box-shadow: 0 0 26px 8px rgba(224,82,82,0.65); }
+      .badge-row { position: absolute; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+      .badge-crit { background: #c53030; color: #ffffff; font-size: 30px; font-weight: 800; letter-spacing: 0.04em;
+        padding: 12px 24px; border-radius: 12px; }
+      .badge-cover { background: rgba(17,28,33,0.85); border: 1px solid #26363d; color: #f4f7f5;
+        font-size: 30px; font-weight: 700; padding: 12px 24px; border-radius: 12px; }
+      #hook-line { position: absolute; left: 90px; bottom: 150px; font-size: 64px; font-weight: 800;
+        letter-spacing: -0.02em; max-width: 1150px; line-height: 1.12; text-shadow: 0 2px 24px rgba(8,14,17,0.7); }
+      #hook-sub { position: absolute; left: 90px; bottom: 92px; font-size: 26px; color: #a8b7b0; font-weight: 600; }
+
+      /* ── Scene 2 + 3 layout ──────────────────────────────────────────── */
+      .head-row { position: absolute; top: 128px; left: 90px; right: 90px; display: flex;
+        justify-content: space-between; align-items: flex-end; }
+      .duo { position: absolute; top: 250px; left: 90px; right: 90px; bottom: 90px; display: grid; gap: 34px; }
+      .card-pad { padding: 34px 38px; height: 100%; display: flex; flex-direction: column; }
+      .card-title { font-size: 30px; font-weight: 800; letter-spacing: -0.01em; }
+      .card-sub { font-size: 20px; color: #a8b7b0; margin-top: 6px; }
+
+      .factor-row { margin-top: 30px; }
+      .factor-label { display: flex; justify-content: space-between; font-size: 22px; font-weight: 700; }
+      .factor-label .val { font-weight: 800; }
+      .factor-track { margin-top: 10px; height: 14px; border-radius: 999px; background: #162229; overflow: hidden; }
+      .factor-fill { height: 100%; border-radius: 999px; transform-origin: left center; }
+      #factor-cap { margin-top: 34px; font-size: 21px; color: #a8b7b0; }
+      #factor-cap strong { color: #f4f7f5; }
+
+      .legend { display: flex; gap: 26px; margin-top: 4px; font-size: 19px; font-weight: 600; color: #a8b7b0; }
+      .legend span { display: flex; align-items: center; gap: 9px; }
+      .sw { width: 26px; height: 4px; border-radius: 2px; }
+
+      /* ── Scene 3 ─────────────────────────────────────────────────────── */
+      .src-card { background: #162229; border: 1px solid #26363d; border-radius: 16px; padding: 24px 28px;
+        display: flex; justify-content: space-between; align-items: center; }
+      .src-name { font-size: 24px; font-weight: 800; letter-spacing: 0.05em; }
+      .src-meta { font-size: 19px; color: #a8b7b0; margin-top: 4px; }
+      .src-units { font-size: 46px; font-weight: 800; color: #5fa8a7; }
+      #two-chip { display: inline-block; margin-top: 22px; background: rgba(55,192,187,0.14); border: 1px solid rgba(55,192,187,0.5);
+        color: #7fd8d4; font-size: 22px; font-weight: 700; padding: 10px 20px; border-radius: 999px; }
+      #cover-payoff { margin-top: 26px; display: flex; align-items: baseline; gap: 20px; }
+      #cover-payoff .lbl { font-size: 24px; font-weight: 700; color: #a8b7b0; }
+      #cover-payoff .nums { font-size: 84px; font-weight: 800; letter-spacing: -0.03em; }
+      #cover-payoff .from { color: #e05252; }
+      #cover-payoff .arrow { color: #a8b7b0; font-size: 60px; }
+      #cover-payoff .to { color: #5ce0a1; }
+      .apply-row { position: relative; margin-top: 26px; display: flex; align-items: center; gap: 22px; }
+      #apply-btn { position: relative; background: #37c0bb; color: #08251a; font-size: 24px; font-weight: 800;
+        padding: 14px 30px; border-radius: 12px; }
+      #resil-chip { background: #162229; border: 1px solid #26363d; border-radius: 12px; padding: 12px 22px;
+        font-size: 24px; font-weight: 700; }
+      #resil-chip .to71 { color: #5ce0a1; font-weight: 800; opacity: 0; }
+      /* Cursor + click ring: positioned with left/top + negative margins, moved
+         with GSAP x/y only (no CSS transform). Rest position sits over Apply plan. */
+      #cursor { position: absolute; left: 46px; top: 22px; margin: -15px 0 0 -15px; width: 30px; height: 30px; border-radius: 50%;
+        background: rgba(244,247,245,0.95); box-shadow: 0 0 0 6px rgba(55,192,187,0.35); }
+      #click-ring { position: absolute; left: 23px; top: -1px; width: 46px; height: 46px; border-radius: 50%; border: 4px solid #37c0bb; opacity: 0; }
+      #corridor-glow { position: absolute; inset: 0; opacity: 0.25; filter: blur(6px); }
+
+      /* ── Scene 4 ─────────────────────────────────────────────────────── */
+      #brief-panel { position: absolute; left: 90px; top: 260px; width: 1060px; bottom: 100px;
+        background: #111c21; border: 1px solid #26363d; border-radius: 20px; padding: 44px 52px; }
+      .brief-kicker { font-size: 19px; font-weight: 700; letter-spacing: 0.16em; color: #5fa8a7; text-transform: uppercase; }
+      .brief-title { font-size: 42px; font-weight: 800; letter-spacing: -0.02em; margin-top: 10px; }
+      #brief-sit { margin-top: 30px; display: inline-block; background: rgba(229,62,62,0.16); border: 1px solid rgba(224,82,82,0.55);
+        color: #f4f7f5; font-size: 25px; font-weight: 700; padding: 12px 22px; border-radius: 12px; }
+      #brief-rec { margin-top: 34px; border: 1px solid rgba(55,192,187,0.55); background: rgba(55,192,187,0.08);
+        border-radius: 14px; padding: 24px 28px; }
+      #brief-rec .r1 { font-size: 27px; font-weight: 800; }
+      #brief-rec .r2 { font-size: 21px; color: #a8b7b0; margin-top: 6px; }
+      #brief-side { position: absolute; right: 90px; top: 300px; width: 560px; }
+      .side-stat { border: 1px solid #26363d; background: rgba(17,28,33,0.7); border-radius: 16px; padding: 26px 30px; }
+      .side-stat .n { font-size: 62px; font-weight: 800; }
+      .side-stat .d { font-size: 20px; color: #a8b7b0; margin-top: 4px; }
+      #brief-note { position: absolute; left: 90px; bottom: 44px; font-size: 21px; color: #a8b7b0; }
+
+      /* ── Scene 5: outro ──────────────────────────────────────────────── */
+      #outro-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.14; filter: saturate(0.8); }
+      #outro-tint { position: absolute; inset: 0; background: radial-gradient(1200px 800px at 50% 46%, rgba(20,67,42,0.35) 0%, rgba(8,14,17,0.9) 100%); }
+      #outro-glow { position: absolute; left: 50%; top: 46%; width: 900px; height: 500px; transform: translate(-50%,-50%);
+        background: radial-gradient(closest-side, rgba(55,192,187,0.22) 0%, rgba(55,192,187,0) 70%); opacity: 0.4; }
+      .outro-center { position: absolute; left: 0; right: 0; top: 42%; display: flex; flex-direction: column; align-items: center; gap: 34px; }
+      .brand-row { display: flex; align-items: center; gap: 30px; }
+      #logo-mark { width: 96px; height: 96px; border-radius: 22px; background: #37c0bb; display: flex; align-items: center; justify-content: center; }
+      #brand-name { font-size: 138px; font-weight: 800; letter-spacing: -0.04em; }
+      #tagline { display: flex; gap: 26px; font-size: 40px; font-weight: 700; letter-spacing: -0.01em; }
+      #tagline .t1 { color: #7fd8d4; } #tagline .t2 { color: #f4f7f5; } #tagline .t3 { color: #ffd6a5; }
+      #ecg-line { position: absolute; left: 0; right: 0; top: 71%; }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-wqk5" id="root" data-composition-id="main" data-start="0" data-duration="22.5" data-fps="30" data-width="1920" data-height="1080">
+      <!-- ═══ SCENE 1 — The map knows first (0 – 5.2) ═══ -->
+      <section data-hf-id="hf-9afm" id="scene-map" class="clip" data-start="0" data-duration="5.2" data-track-index="0">
+        <div data-hf-id="hf-y94y" class="scene-inner" id="map-inner">
+          <div data-hf-id="hf-1pxe" data-layout-allow-overflow="">
+            <img data-hf-id="hf-lml1" id="map-art" src="assets/brand/login-network.png" alt="">
+          </div>
+          <div data-hf-id="hf-14l8" id="map-vignette"></div>
+          <div data-hf-id="hf-wp89" id="map-bottomfade"></div>
+          <div data-hf-id="hf-b3xt" id="map-loopstrip" class="loopstrip" data-layout-allow-overlap=""></div>
+          <div data-hf-id="hf-efty" id="node-wrap">
+            <div data-hf-id="hf-tyg7" id="halo"></div>
+            <div data-hf-id="hf-m1rf" id="ring"></div>
+            <div data-hf-id="hf-th3b" id="node-dot"></div>
+          </div>
+          <div data-hf-id="hf-h9yk" class="badge-row" id="badge-row" style="left: 1300px; top: 396px;">
+            <div data-hf-id="hf-iv2q" class="badge-crit" id="badge-crit">NADIA · CRITICAL · 57</div>
+            <div data-hf-id="hf-hmln" class="badge-cover tabular" id="badge-cover">cover 5.0d</div>
+          </div>
+          <h1 data-hf-id="hf-t855" id="hook-line">Five days before the shelves empty.</h1>
+          <p data-hf-id="hf-4423" id="hook-sub" class="tabular">ORS · 5,460 units on hand · Nadia district</p>
+        </div>
+      </section>
+
+      <!-- ═══ SCENE 2 — Understand, then predict (4.5 – 11.0) ═══ -->
+      <section data-hf-id="hf-9ub0" id="scene-flow" class="clip" data-start="4.5" data-duration="6.5" data-track-index="1">
+        <div data-hf-id="hf-m8zy" class="scene-inner" id="flow-inner">
+          <div data-hf-id="hf-ybxz" id="flow-loopstrip" class="loopstrip" data-layout-allow-overlap=""></div>
+          <div data-hf-id="hf-hp2p" class="head-row">
+            <div data-hf-id="hf-yeow">
+              <div data-hf-id="hf-7uzi" class="kicker">Understand → Predict</div>
+              <div data-hf-id="hf-hv0u" class="scene-title">Root-Cause Explorer</div>
+            </div>
+            <div data-hf-id="hf-21sx" class="scene-sub tabular">Nadia · CRITICAL 57 · six weighted factors</div>
+          </div>
+          <div data-hf-id="hf-eh1b" class="duo" style="grid-template-columns: 46fr 54fr;">
+            <div data-hf-id="hf-3gny" class="card card-pad" id="cause-card">
+              <div data-hf-id="hf-qpzf" class="card-title">Why Nadia reads <span data-hf-id="hf-ac7z" style="color:#e05252;">CRITICAL</span></div>
+              <div data-hf-id="hf-0udd" class="card-sub">Composite risk for the worst line — ORS at 5.0 days of cover</div>
+              <div data-hf-id="hf-gduy" class="factor-row">
+                <div data-hf-id="hf-uyvs" class="factor-label"><span data-hf-id="hf-iwj0">Days of cover</span><span data-hf-id="hf-ns6a" class="val tabular" style="color:#e05252;">5.0d</span></div>
+                <div data-hf-id="hf-hm03" class="factor-track"><div data-hf-id="hf-5e6q" class="factor-fill" id="bar1" style="width:71%; background:#e05252;"></div></div>
+              </div>
+              <div data-hf-id="hf-xn8u" class="factor-row">
+                <div data-hf-id="hf-hjzk" class="factor-label"><span data-hf-id="hf-m85p">Demand growth</span><span data-hf-id="hf-jjzd" class="val tabular" style="color:#e2a33c;">+31%</span></div>
+                <div data-hf-id="hf-tbc3" class="factor-track"><div data-hf-id="hf-ogcv" class="factor-fill" id="bar2" style="width:62%; background:#e2a33c;"></div></div>
+              </div>
+              <div data-hf-id="hf-y1jv" class="factor-row">
+                <div data-hf-id="hf-gd2h" class="factor-label"><span data-hf-id="hf-36cw">Projected stock-out</span><span data-hf-id="hf-cmvj" class="val tabular" style="color:#e05252;">+5d</span></div>
+                <div data-hf-id="hf-sx12" class="factor-track"><div data-hf-id="hf-hkz7" class="factor-fill" id="bar3" style="width:50%; background:#e05252;"></div></div>
+              </div>
+              <p data-hf-id="hf-jy4h" id="factor-cap"><strong data-hf-id="hf-jtsx">Every bar is a visible input</strong> — Σ(weight × value) = score.</p>
+            </div>
+            <div data-hf-id="hf-eeld" class="card card-pad" id="chart-card">
+              <div data-hf-id="hf-0qu3" class="card-title">Demand Intelligence</div>
+              <div data-hf-id="hf-ay85" class="card-sub">Nadia · ORS — daily demand, statistical forecast with 80% interval</div>
+              <div data-hf-id="hf-4wnw" class="legend" style="margin-top:22px;">
+                <span data-hf-id="hf-8uto"><span data-hf-id="hf-pmpg" class="sw" style="background:#9fb3c8;"></span>historical demand</span>
+                <span data-hf-id="hf-i4mk"><span data-hf-id="hf-7lv4" class="sw" style="background:#9b4dff;"></span>forecast</span>
+                <span data-hf-id="hf-v8mh"><span data-hf-id="hf-clii" class="sw" style="background:#e05252;"></span>projected stock</span>
+                <span data-hf-id="hf-5vy8"><span data-hf-id="hf-7s4v" class="sw" style="border-top:3px dashed #e2a33c; background:none; height:0;"></span>reserve threshold</span>
+              </div>
+              <svg data-hf-id="hf-vipi" id="chart" viewBox="0 0 760 400" style="width:100%; height:auto; margin-top:16px;">
+                <line data-hf-id="hf-1lzh" x1="60" y1="330" x2="740" y2="330" stroke="#26363d" stroke-width="2" />
+                <line data-hf-id="hf-bv1o" x1="60" y1="230" x2="740" y2="230" stroke="#1d2b32" stroke-width="1" />
+                <line data-hf-id="hf-rnoe" x1="60" y1="130" x2="740" y2="130" stroke="#1d2b32" stroke-width="1" />
+                <text data-hf-id="hf-95yy" x="52" y="336" fill="#a8b7b0" font-size="18" text-anchor="end">0</text>
+                <text data-hf-id="hf-d9cs" x="52" y="236" fill="#a8b7b0" font-size="18" text-anchor="end">2k</text>
+                <text data-hf-id="hf-j1j9" x="52" y="136" fill="#a8b7b0" font-size="18" text-anchor="end">4k</text>
+                <text data-hf-id="hf-4dsr" x="52" y="42" fill="#a8b7b0" font-size="18" text-anchor="end">6k</text>
+                <line data-hf-id="hf-xs4n" id="threshold-line" x1="60" y1="210" x2="740" y2="210" stroke="#e2a33c" stroke-width="2.5" stroke-dasharray="9 8" opacity="0" />
+                <path data-hf-id="hf-i75o" id="hist-line" d="M60,278 L90,281 L120,272 L150,280 L180,270 L210,276 L240,266 L270,274 L300,265 L330,272 L360,262 L400,268" fill="none" stroke="#9fb3c8" stroke-width="4" stroke-linecap="round" />
+                <defs data-hf-id="hf-mh0t">
+                  <clippath data-hf-id="hf-sauv" id="fc-clip"><rect data-hf-id="hf-is48" id="fc-clip-rect" x="395" y="0" width="0" height="400" /></clippath>
+                </defs>
+                <path data-hf-id="hf-duoc" id="fc-line" d="M400,268 L445,261 L490,254 L535,248 L580,243 L625,238 L670,235 L740,231" fill="none" stroke="#9b4dff" stroke-width="4" stroke-dasharray="10 9" stroke-linecap="round" clip-path="url(#fc-clip)" />
+                <path data-hf-id="hf-6ih9" id="stock-line" d="M400,57 L424,112 L448,166 L473,221 L497,275 L521,330" fill="none" stroke="#e05252" stroke-width="4" stroke-linecap="round" />
+                <line data-hf-id="hf-npi6" id="breach-marker" x1="521" y1="30" x2="521" y2="330" stroke="#718096" stroke-width="2" stroke-dasharray="5 6" opacity="0" />
+                <g data-hf-id="hf-cnlw" id="stockout-label" opacity="0" transform="translate(521,64)">
+                  <rect data-hf-id="hf-r182" x="-196" y="-25" width="392" height="48" rx="10" fill="#c53030" />
+                  <text data-hf-id="hf-bair" x="0" y="8" fill="#ffffff" font-size="23" font-weight="800" text-anchor="middle">projected stock-out +5d</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ SCENE 3 — Move resources (10.3 – 17.2) ═══ -->
+      <section data-hf-id="hf-opot" id="scene-move" class="clip" data-start="10.3" data-duration="6.9" data-track-index="2">
+        <div data-hf-id="hf-9kox" class="scene-inner" id="move-inner">
+          <div data-hf-id="hf-7rm4" id="move-loopstrip" class="loopstrip" data-layout-allow-overlap=""></div>
+          <div data-hf-id="hf-2fqd" class="head-row">
+            <div data-hf-id="hf-y7yw">
+              <div data-hf-id="hf-wgo4" class="kicker">Optimize</div>
+              <div data-hf-id="hf-w29g" class="scene-title">Redistribution Engine</div>
+            </div>
+            <div data-hf-id="hf-ur7h" class="scene-sub">Multi-source allocation from current simulated inventory</div>
+          </div>
+          <div data-hf-id="hf-7urn" class="duo" style="grid-template-columns: 44fr 56fr;">
+            <div data-hf-id="hf-m7q1" class="card" style="position:relative; overflow:hidden;">
+              <div data-hf-id="hf-wlu7" id="corridor-glow">
+                <svg data-hf-id="hf-k0fv" viewBox="0 0 560 420" style="width:100%; height:100%;">
+                  <line data-hf-id="hf-4663" x1="170" y1="240" x2="400" y2="110" stroke="#37c0bb" stroke-width="10" opacity="0.7" />
+                  <line data-hf-id="hf-jv5x" x1="330" y1="330" x2="400" y2="110" stroke="#37c0bb" stroke-width="10" opacity="0.7" />
+                </svg>
+              </div>
+              <svg data-hf-id="hf-xnbc" id="corridor-map" viewBox="0 0 560 420" style="width:100%; height:100%;">
+                <circle data-hf-id="hf-udnt" cx="90" cy="90" r="9" fill="#3d5058" />
+                <circle data-hf-id="hf-rz54" cx="250" cy="60" r="9" fill="#3d5058" />
+                <circle data-hf-id="hf-gqnw" cx="120" cy="350" r="9" fill="#3d5058" />
+                <circle data-hf-id="hf-sdbu" cx="480" cy="300" r="9" fill="#3d5058" />
+                <line data-hf-id="hf-6f3l" id="corr1" x1="170" y1="240" x2="400" y2="110" stroke="#37c0bb" stroke-width="5" stroke-linecap="round" />
+                <line data-hf-id="hf-t54y" id="corr2" x1="330" y1="330" x2="400" y2="110" stroke="#37c0bb" stroke-width="5" stroke-linecap="round" />
+                <circle data-hf-id="hf-dwil" cx="170" cy="240" r="14" fill="#37c0bb" />
+                <circle data-hf-id="hf-aa13" cx="330" cy="330" r="14" fill="#37c0bb" />
+                <circle data-hf-id="hf-5e04" id="nadia-node" cx="400" cy="110" r="17" fill="#e05252" />
+                <circle data-hf-id="hf-azi8" id="nadia-ring" cx="400" cy="110" r="17" fill="none" stroke="#e05252" stroke-width="3" />
+                <text data-hf-id="hf-2bzl" x="150" y="290" fill="#f4f7f5" font-size="22" font-weight="700" text-anchor="middle">Hooghly</text>
+                <text data-hf-id="hf-xrwj" x="322" y="380" fill="#f4f7f5" font-size="22" font-weight="700" text-anchor="middle">Kolkata</text>
+                <text data-hf-id="hf-z7qa" x="430" y="96" fill="#e05252" font-size="22" font-weight="800">Nadia</text>
+              </svg>
+              <div data-hf-id="hf-5i4q" style="position:absolute; left:34px; bottom:26px; font-size:19px; color:#a8b7b0;">6 fully modeled districts · 20 monitored medicine lines</div>
+            </div>
+            <div data-hf-id="hf-9in0" class="card card-pad" style="justify-content:center;">
+              <div data-hf-id="hf-e4do" class="src-card" id="src1">
+                <div data-hf-id="hf-x11t"><div data-hf-id="hf-b4ke" class="src-name">HOOGLY</div><div data-hf-id="hf-i35k" class="src-meta tabular">ORS surplus 8,700u · 2.9h transit</div></div>
+                <div data-hf-id="hf-oiiz" class="src-units tabular">2,500u</div>
+              </div>
+              <div data-hf-id="hf-pepl" class="src-card" id="src2" style="margin-top:18px;">
+                <div data-hf-id="hf-xfcu"><div data-hf-id="hf-i9z7" class="src-name">KOLKATA</div><div data-hf-id="hf-0cfb" class="src-meta tabular">ORS surplus 6,900u</div></div>
+                <div data-hf-id="hf-ss7v" class="src-units tabular">1,600u</div>
+              </div>
+              <div data-hf-id="hf-ucl9" id="two-chip" class="tabular">2 sources · 4,100 units</div>
+              <div data-hf-id="hf-7ufm" id="cover-payoff" class="tabular">
+                <span data-hf-id="hf-mtjk" class="lbl">cover</span>
+                <span data-hf-id="hf-z2yp" class="nums from">5.0d</span>
+                <span data-hf-id="hf-v68i" class="arrow">→</span>
+                <span data-hf-id="hf-ifqr" class="nums to">8.0d</span>
+              </div>
+              <div data-hf-id="hf-f5c0" class="apply-row" id="apply-row">
+                <div data-hf-id="hf-g6vp" id="apply-btn" data-layout-allow-occlusion="">Apply plan</div>
+                <div data-hf-id="hf-kp5m" id="resil-chip" class="tabular">Resilience index <span data-hf-id="hf-ff69" class="r-from">70</span> → <span data-hf-id="hf-ooge" class="to71">71</span></div>
+                <div data-hf-id="hf-tt2d" id="cursor" data-layout-allow-occlusion=""></div>
+                <div data-hf-id="hf-fvkq" id="click-ring"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ SCENE 4 — The executive response (16.5 – 20.2) ═══ -->
+      <section data-hf-id="hf-eb36" id="scene-brief" class="clip" data-start="16.5" data-duration="3.7" data-track-index="3">
+        <div data-hf-id="hf-l1mk" class="scene-inner" id="brief-inner">
+          <div data-hf-id="hf-wjmf" id="brief-loopstrip" class="loopstrip" data-layout-allow-overlap=""></div>
+          <div data-hf-id="hf-jya6" id="brief-panel">
+            <div data-hf-id="hf-qz1n" class="brief-kicker">Executive response</div>
+            <div data-hf-id="hf-6471" class="brief-title">HealthFlow Executive Policy Brief</div>
+            <div data-hf-id="hf-4d05" id="brief-sit" class="tabular">1 critical district · 10.1M residents</div>
+            <div data-hf-id="hf-khsu" id="brief-rec">
+              <div data-hf-id="hf-8mst" class="r1 tabular">ORS — 2,500u from Hooghly (2.9h) · +1,600u from Kolkata</div>
+              <div data-hf-id="hf-4x0e" class="r2">Recommended intervention · cover 5.0d → 8.0d · 2 sources</div>
+            </div>
+          </div>
+          <div data-hf-id="hf-865p" id="brief-side">
+            <div data-hf-id="hf-fsd4" class="side-stat">
+              <div data-hf-id="hf-qzlq" class="n tabular" style="color:#5ce0a1;">70 → 71</div>
+              <div data-hf-id="hf-na21" class="d">Network resilience index after the transfer</div>
+            </div>
+            <div data-hf-id="hf-opj9" class="side-stat" style="margin-top:22px;">
+              <div data-hf-id="hf-0kxf" class="n tabular">+3.0d</div>
+              <div data-hf-id="hf-bygb" class="d">Additional coverage for Nadia's ORS line</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ SCENE 5 — Outro (19.9 – 22.5) ═══ -->
+      <section data-hf-id="hf-1dax" id="scene-outro" class="clip" data-start="19.9" data-duration="2.6" data-track-index="4">
+        <div data-hf-id="hf-ttut" class="scene-inner" id="outro-inner">
+          <div data-hf-id="hf-sjqe" data-layout-allow-overflow="">
+            <img data-hf-id="hf-dlu0" id="outro-art" src="assets/brand/login-network.png" alt="">
+          </div>
+          <div data-hf-id="hf-sfzw" id="outro-tint"></div>
+          <div data-hf-id="hf-48h0" id="outro-glow"></div>
+          <svg data-hf-id="hf-wae0" id="ecg-line" viewBox="0 0 1920 120" style="width:100%; height:120px;">
+            <path data-hf-id="hf-0drj" id="ecg-path" d="M0,60 L620,60 L680,60 L710,18 L740,98 L768,44 L796,60 L1300,60 L1360,60 L1390,26 L1418,90 L1444,50 L1470,60 L1920,60" fill="none" stroke="#37c0bb" stroke-width="3" stroke-linejoin="round" opacity="0.85" />
+          </svg>
+          <div data-hf-id="hf-1mr5" class="outro-center">
+            <div data-hf-id="hf-1l90" class="brand-row">
+              <div data-hf-id="hf-zldy" id="logo-mark">
+                <svg data-hf-id="hf-j6ss" viewBox="0 0 48 48" style="width:58px; height:58px;">
+                  <path data-hf-id="hf-3qfh" d="M4,26 L14,26 L18,14 L24,36 L29,20 L33,26 L44,26" fill="none" stroke="#08251a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
+              <div data-hf-id="hf-977y" id="brand-name">HealthFlow</div>
+            </div>
+            <div data-hf-id="hf-vin9" id="tagline">
+              <span data-hf-id="hf-i8vf" class="t1">Predict shortages.</span>
+              <span data-hf-id="hf-puhf" class="t2">Move resources.</span>
+              <span data-hf-id="hf-nn8k" class="t3">Protect care.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ AUDIO ═══ -->
+      <audio data-hf-id="hf-lxff" id="music" src="assets/music/happy-beats-business-moves-vol-12-by-ende-dot-app.mp3" data-start="0" data-duration="22.5" data-track-index="10" data-automation="{&quot;version&quot;:1,&quot;lanes&quot;:[{&quot;target&quot;:&quot;volume&quot;,&quot;points&quot;:[{&quot;t&quot;:0,&quot;v&quot;:0.2},{&quot;t&quot;:0.7,&quot;v&quot;:0.32},{&quot;t&quot;:21.3,&quot;v&quot;:0.32},{&quot;t&quot;:22.4,&quot;v&quot;:0}]}]}"></audio>
+      <audio data-hf-id="hf-jsw2" id="sfx-bars" src="assets/sfx/drop_001.ogg" data-start="5.45" data-track-index="11" data-volume="0.5"></audio>
+      <audio data-hf-id="hf-s1tf" id="sfx-label" src="assets/sfx/bong_001.ogg" data-start="8.74" data-track-index="12" data-volume="0.45"></audio>
+      <audio data-hf-id="hf-5pye" id="sfx-card1" src="assets/sfx/drop_001.ogg" data-start="11.25" data-track-index="13" data-volume="0.5"></audio>
+      <audio data-hf-id="hf-hnoy" id="sfx-card2" src="assets/sfx/drop_001.ogg" data-start="11.85" data-track-index="14" data-volume="0.45"></audio>
+      <audio data-hf-id="hf-5clh" id="sfx-outro" src="assets/sfx/impactSoft_medium_001.ogg" data-start="20.3" data-track-index="15" data-volume="0.5"></audio>
+    </div>
+
+    <script src="assets/music/audio-data.js"></script>
+    <script>
+      const FPS = 30;
+      const DUR = 22.5;
+
+      /* ── Loop strip builder: 8 stages, single-span chips (seek-safe) ── */
+      const STAGES = ["OBSERVE","UNDERSTAND","PREDICT","OPTIMIZE","ACT","SIMULATE","REPORT","SCALE"];
+      function buildLoopStrip(id) {
+        const host = document.getElementById(id);
+        const chips = [];
+        STAGES.forEach((s) => {
+          const chip = document.createElement("div");
+          chip.className = "ls-chip";
+          chip.textContent = s;
+          chip.setAttribute("data-layout-allow-overlap", "");
+          host.appendChild(chip);
+          chips.push(chip);
+        });
+        return chips;
+      }
+      const lsMap = buildLoopStrip("map-loopstrip");
+      const lsFlow = buildLoopStrip("flow-loopstrip");
+      const lsMove = buildLoopStrip("move-loopstrip");
+      const lsBrief = buildLoopStrip("brief-loopstrip");
+      // Stage lock-in: instant state flip + scale pop (no mid-fade contrast frame)
+      function lockStage(chip, t) {
+        tl.set(chip, { className: "ls-chip on" }, t);
+        tl.fromTo(chip, { scale: 1.09 }, { scale: 1, duration: 0.28, ease: "power2.out", immediateRender: false }, t);
+      }
+
+      /* SVG line-draw setup: measure once, at build time */
+      function dashSetup(sel) {
+        const el = document.querySelector(sel);
+        const len = el.getTotalLength();
+        el.style.strokeDasharray = el.getAttribute("stroke-dasharray") || String(len);
+        if (!el.getAttribute("stroke-dasharray")) el.style.strokeDasharray = String(len);
+        return len;
+      }
+      const lenHist = dashSetup("#hist-line");
+      const lenStock = dashSetup("#stock-line");
+      const lenCorr1 = dashSetup("#corr1");
+      const lenCorr2 = dashSetup("#corr2");
+      const lenEcg = dashSetup("#ecg-path");
+
+      const tl = gsap.timeline({ paused: true });
+
+      /* ═══ SCENE 1 — map (0 – 5.2) ═══ */
+      tl.fromTo("#map-art", { scale: 1.05 }, { scale: 1.0, duration: 4.6, ease: "power1.out" }, 0);
+      tl.fromTo("#map-inner", { opacity: 1 }, { opacity: 0, duration: 0.7, ease: "power1.inOut" }, 4.5);
+      tl.fromTo("#hook-line", { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 1.7);
+      tl.fromTo("#hook-sub", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 2.5);
+      // badge locks in
+      tl.fromTo("#badge-row", { opacity: 0, scale: 0.72 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.8)" }, 0.95);
+      tl.fromTo("#node-dot", { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }, 0.75);
+      // finite pulse: 4 cycles
+      tl.fromTo("#ring", { scale: 0.55, opacity: 0.9 }, { scale: 1.55, opacity: 0, duration: 1.15, ease: "power1.out", repeat: 3 }, 0.85);
+      // OBSERVE lit
+      lockStage(lsMap[0], 1.2);
+
+      /* ═══ SCENE 2 — understand + predict (4.5 – 11.0) ═══ */
+      tl.fromTo("#flow-inner", { opacity: 0 }, { opacity: 1, duration: 0.7, ease: "power1.inOut" }, 4.5);
+      tl.fromTo("#cause-card", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 5.0);
+      tl.fromTo("#chart-card", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 5.85);
+      // factor bars stagger in (soft drop accents)
+      tl.fromTo("#bar1", { scaleX: 0 }, { scaleX: 1, duration: 0.55, ease: "power3.out" }, 5.45);
+      tl.fromTo("#bar2", { scaleX: 0 }, { scaleX: 1, duration: 0.55, ease: "power3.out" }, 5.8);
+      tl.fromTo("#bar3", { scaleX: 0 }, { scaleX: 1, duration: 0.55, ease: "power3.out" }, 6.15);
+      // chart draws
+      tl.fromTo("#hist-line", { strokeDashoffset: lenHist }, { strokeDashoffset: 0, duration: 0.9, ease: "power1.inOut" }, 6.1);
+      tl.fromTo("#threshold-line", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 7.3);
+      // dashed forecast line reveals left→right via clip rect (dash-offset can't hide dashes)
+      tl.fromTo("#fc-clip-rect", { attr: { width: 0 } }, { attr: { width: 350 }, duration: 0.95, ease: "power1.inOut" }, 7.05);
+      tl.fromTo("#stock-line", { strokeDashoffset: lenStock }, { strokeDashoffset: 0, duration: 0.95, ease: "power1.in" }, 7.65);
+      // beat-locked: 8.74s — stock-out label lands on the strong cue
+      tl.fromTo("#breach-marker", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 8.6);
+      tl.fromTo("#stockout-label", { opacity: 0, scale: 0.8, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.7)" }, 8.74);
+      // loop strip: UNDERSTAND → PREDICT
+      lockStage(lsFlow[1], 5.0);
+      lockStage(lsFlow[2], 7.0);
+      tl.fromTo("#flow-inner", { opacity: 1 }, { opacity: 0, duration: 0.7, ease: "power1.inOut", immediateRender: false }, 10.3);
+
+      /* ═══ SCENE 3 — move resources (10.3 – 17.2) ═══ */
+      tl.fromTo("#move-inner", { opacity: 0 }, { opacity: 1, duration: 0.7, ease: "power1.inOut" }, 10.3);
+      tl.fromTo("#corr1", { strokeDashoffset: lenCorr1 }, { strokeDashoffset: 0, duration: 0.7, ease: "power2.inOut" }, 11.0);
+      tl.fromTo("#corr2", { strokeDashoffset: lenCorr2 }, { strokeDashoffset: 0, duration: 0.6, ease: "power2.inOut" }, 11.35);
+      // source cards slide in one by one
+      tl.fromTo("#src1", { opacity: 0, x: 70 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 11.25);
+      tl.fromTo("#src2", { opacity: 0, x: 70 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 11.85);
+      tl.fromTo("#two-chip", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 12.45);
+      // beat-locked: 13.11s — the cover payoff lands on the strong cue
+      tl.fromTo("#cover-payoff", { opacity: 0, scale: 0.85, y: 22 }, { opacity: 1, scale: 1, y: 0, duration: 0.45, ease: "back.out(1.6)" }, 13.11);
+      // apply plan: cursor moves in and clicks
+      tl.fromTo("#apply-row", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 14.15);
+      tl.fromTo("#cursor", { x: 520, y: 260, opacity: 0 }, { x: 0, y: 0, opacity: 1, duration: 0.4, ease: "power2.inOut" }, 14.2);
+      tl.fromTo("#click-ring", { opacity: 0.9, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.45, ease: "power1.out" }, 14.6);
+      // resilience counter 70 → 71: both numbers live in the DOM (seek-safe)
+      tl.fromTo("#resil-chip .r-from", { opacity: 1 }, { opacity: 0.2, duration: 0.3 }, 14.7);
+      tl.fromTo("#resil-chip .to71", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }, 14.85);
+      // nadia node settles to healthy
+      tl.to("#nadia-node", { attr: { fill: "#37c0bb" }, duration: 0.5 }, 14.95);
+      tl.to("#nadia-ring", { attr: { stroke: "#37c0bb" }, duration: 0.5 }, 14.95);
+      // loop strip: OPTIMIZE → ACT → SIMULATE
+      lockStage(lsMove[3], 10.8);
+      lockStage(lsMove[4], 14.35);
+      lockStage(lsMove[5], 14.95);
+      tl.fromTo("#move-inner", { opacity: 1 }, { opacity: 0, duration: 0.7, ease: "power1.inOut", immediateRender: false }, 16.5);
+
+      /* ═══ SCENE 4 — executive response (16.5 – 20.2) ═══ */
+      tl.fromTo("#brief-inner", { opacity: 0 }, { opacity: 1, duration: 0.7, ease: "power1.inOut" }, 16.5);
+      // beat-locked: 17.47s — brief panel lands on the strong cue (±0.15s)
+      tl.fromTo("#brief-panel", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 16.95);
+      tl.fromTo("#brief-sit", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 17.75);
+      tl.fromTo("#brief-rec", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 18.05);
+      tl.fromTo("#brief-side .side-stat", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out", stagger: 0.2 }, 17.55);
+      // loop strip: REPORT → SCALE
+      lockStage(lsBrief[6], 17.6);
+      lockStage(lsBrief[7], 18.55);
+      tl.fromTo("#brief-inner", { opacity: 1 }, { opacity: 0, duration: 0.7, ease: "power1.inOut", immediateRender: false }, 19.9);
+
+      /* ═══ SCENE 5 — outro (19.9 – 22.5) ═══ */
+      tl.fromTo("#outro-inner", { opacity: 0 }, { opacity: 1, duration: 0.7, ease: "power1.inOut" }, 19.9);
+      tl.fromTo("#ecg-path", { strokeDashoffset: lenEcg }, { strokeDashoffset: 0, duration: 1.0, ease: "power1.inOut" }, 20.0);
+      tl.fromTo(".brand-row", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.5, ease: "back.out(1.4)" }, 20.35);
+      tl.fromTo("#tagline .t1", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 20.75);
+      tl.fromTo("#tagline .t2", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 20.95);
+      tl.fromTo("#tagline .t3", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 21.15);
+
+      /* ═══ Audio-reactive: subtle — pre-extracted RMS/bass breathes three
+             decoratives (hero halo, corridor glow, outro glow). No other
+             tweens touch these elements' opacity. ═══ */
+      const frames = window.AUDIO_DATA.frames;
+      for (let f = 0; f < Math.ceil(DUR * FPS); f++) {
+        tl.call(
+          (function (fr) {
+            return function () {
+              const rms = fr ? fr.rms : 0;
+              const bass = fr ? fr.bands[0] : 0;
+              gsap.set("#halo", { opacity: 0.3 + rms * 0.45 });
+              gsap.set("#corridor-glow", { opacity: 0.2 + bass * 0.45 });
+              gsap.set("#outro-glow", { opacity: 0.3 + rms * 0.35 });
+            };
+          })(frames[f]),
+          [],
+          f / FPS
+        );
+      }
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

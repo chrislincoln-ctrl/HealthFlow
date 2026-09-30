@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+scripts/.tmp/
+.logs-*.txt
+
+# Windows reserved-name artifact
+nul
