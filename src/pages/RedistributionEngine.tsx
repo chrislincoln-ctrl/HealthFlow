@@ -361,8 +361,8 @@ export default function RedistributionEngine() {
                     <p className="text-sm font-semibold text-ink">{s.name}</p>
                     <p className="tabular text-[11px] text-slate-450">
                       <DefTerm term="Safe surplus" /> {s.surplus.toLocaleString()} u
-                      {s.coverAfter !== null && ` · keeps ${s.coverAfter.toFixed(1)}d cover after transfer`}
-                      {!s.eligible && (s.disrupted ? ' · corridor disrupted' : ' · below reserve threshold')}
+                      {s.coverAfter !== null && ` ·                      keeps ${s.coverAfter.toFixed(1)}d cover after transfer`}
+                      {!s.eligible && (s.disrupted ? ' · corridor disrupted' : ' · available stock is below the reserve threshold')}
                     </p>
                   </div>
                   <div className="text-right">
@@ -443,7 +443,7 @@ export default function RedistributionEngine() {
                 Required {plan.requiredUnits.toLocaleString()} u to reach the {plan.targetUnits.toLocaleString()} u
                 reserve target ({shortage.reserveThresholdDays}d × projected demand).{' '}
                 {plan.remainingGapUnits > 0
-                  ? `${plan.transferredUnits.toLocaleString()} u allocated; ${plan.remainingGapUnits.toLocaleString()} u gap — no eligible source can give more without breaching its own reserve.`
+                  ? `${plan.transferredUnits.toLocaleString()} u allocated; ${plan.remainingGapUnits.toLocaleString()} u gap — no additional full shipment available under the current rounding rule without a source breaching its own reserve.`
                   : `All ${plan.transferredUnits.toLocaleString()} u allocated from ${plan.legs.length} source${plan.legs.length > 1 ? 's' : ''}; reserve target restored.`}{' '}
                 Cover {plan.daysOfCoverBefore.toFixed(1)}d → {plan.daysOfCoverAfter.toFixed(1)}d; projected stock-out{' '}
                 {plan.projectedStockOutBefore !== null && plan.projectedStockOutBefore < 45
