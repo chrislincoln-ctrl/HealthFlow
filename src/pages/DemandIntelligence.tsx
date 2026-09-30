@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
+  Area,
   CartesianGrid,
   Line,
   LineChart,
@@ -60,13 +61,19 @@ export default function DemandIntelligence() {
 
   // Chart rows: history then forecast bridge, forecast band, depletion path.
   const chartData = useMemo(() => {
-    const rows: { day: string; history: number | null; forecast: number | null; stock: number | null }[] =
-      forecast.history.map((h) => ({
-        day: `D${h.day}`,
-        history: h.units,
-        forecast: null,
-        stock: null,
-      }));
+    const rows: {
+      day: string;
+      history: number | null;
+      forecast: number | null;
+      stock: number | null;
+      band: [number, number] | null;
+    }[] = forecast.history.map((h) => ({
+      day: `D${h.day}`,
+      history: h.units,
+      forecast: null,
+      stock: null,
+      band: null,
+    }));
     const lastHist = forecast.history[forecast.history.length - 1].units;
     rows[rows.length - 1].forecast = lastHist; // bridge the gap between series
     forecast.forecast.forEach((p, i) => {
@@ -75,10 +82,29 @@ export default function DemandIntelligence() {
         history: null,
         forecast: p.units,
         stock: depletion.path[i]?.units ?? null,
+        band: [p.lo, p.hi],
       });
     });
     return rows;
   }, [forecast, depletion]);
+
+  // Explicit numeric domain for the log axis (log scales misbehave with the
+  // 'auto' string domain): floor at the smallest positive plotted value,
+  // ceiling above the largest — including the reserve target line.
+  const chartDomain = useMemo<[number, number]>(() => {
+    let min = Infinity;
+    let max = -Infinity;
+    for (const row of chartData) {
+      for (const v of [row.history, row.forecast, row.stock, ...(row.band ?? [])]) {
+        if (typeof v === 'number' && v > 0) {
+          if (v < min) min = v;
+          if (v > max) max = v;
+        }
+      }
+    }
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return [1, 10];
+    return [Math.max(1, Math.floor(min * 0.8)), Math.ceil(Math.max(max, reserveTarget) * 1.1)];
+  }, [chartData, reserveTarget]);
 
   return (
     <div className="space-y-4">
@@ -151,8 +177,9 @@ export default function DemandIntelligence() {
             <div className="flex items-center gap-3 text-[10px] font-semibold text-slate-450">
               <span className="flex items-center gap-1"><span className="h-0.5 w-4 rounded bg-chrome" /> historical demand</span>
               <span className="flex items-center gap-1"><span className="h-0.5 w-4 rounded bg-ai" /> forecast</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-4 rounded bg-ai/20" /> 80% band</span>
               <span className="flex items-center gap-1"><span className="h-0.5 w-4 rounded bg-status-critical" /> projected stock</span>
-              <span className="flex items-center gap-1"><span className="h-3 w-px border-t border-dashed border-status-critical" /> reserve threshold</span>
+              <span className="flex items-center gap-1"><span className="h-3 w-px border-t border-dashed border-status-critical" /> reserve target</span>
             </div>
           </div>
           <p className="mb-2 text-[11px] text-slate-450">
@@ -166,7 +193,16 @@ export default function DemandIntelligence() {
               <LineChart data={chartData} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
                 <CartesianGrid stroke="var(--hf-line-soft)" vertical={false} />
                 <XAxis dataKey="day" tick={{ fontSize: 10, fill: 'var(--hf-muted)' }} stroke="var(--hf-line)" interval={6} />
-                <YAxis tick={{ fontSize: 10, fill: 'var(--hf-muted)' }} stroke="var(--hf-line)" />
+                {/* Log-friendly scale: demand (~hundreds) and projected stock
+                    (thousands→0) share the chart, so a purely linear axis
+                    collapses the stock line into a near-vertical drop. The
+                    band is rendered on the demand scale. */}
+                <YAxis
+                  scale="log"
+                  domain={chartDomain}
+                  tick={{ fontSize: 10, fill: 'var(--hf-muted)' }}
+                  stroke="var(--hf-line)"
+                />
                 <Tooltip
                   contentStyle={{
                     background: 'var(--hf-elevated)',
@@ -188,9 +224,29 @@ export default function DemandIntelligence() {
                     position: 'insideTopRight',
                   }}
                 />
-                <Line dataKey="history" stroke="#33415C" strokeWidth={1.8} dot={false} isAnimationActive={false} />
-                <Line dataKey="forecast" stroke="#6A00F4" strokeWidth={2} strokeDasharray="5 3" dot={false} isAnimationActive={false} />
-                <Line dataKey="stock" stroke="#C53030" strokeWidth={1.6} dot={false} isAnimationActive={false} />
+                <Line dataKey="history" name="Historical demand" stroke="#33415C" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                <Area
+                  dataKey="band"
+                  name="80% interval"
+                  stroke="none"
+                  fill="currentColor"
+                  fillOpacity={1}
+                  className="text-ai/20"
+                  isAnimationActive={false}
+                />
+                <Line dataKey="forecast" name="Forecast" stroke="#6A00F4" strokeWidth={2} strokeDasharray="5 3" dot={false} isAnimationActive={false} />
+                <Line dataKey="stock" name="Projected stock" stroke="#C53030" strokeWidth={1.6} dot={false} isAnimationActive={false} />
+                <ReferenceLine
+                  y={reserveTarget}
+                  stroke="#C53030"
+                  strokeDasharray="6 4"
+                  label={{
+                    value: `reserve target ${reserveTarget.toLocaleString()} u`,
+                    fontSize: 10,
+                    fill: 'var(--hf-muted)',
+                    position: 'insideTopLeft',
+                  }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
