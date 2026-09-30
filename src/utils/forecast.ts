@@ -130,6 +130,24 @@ export function forecastDemand(
 }
 
 /**
+ * CANONICAL DEMAND WINDOW — mean forecast daily demand: the mean of the NEXT
+ * 7 forecast days for this district+medicine line, scenario-adjusted. Every
+ * derived metric (cover, reserve target, reserve gap) uses THIS window, and
+ * it is deliberately independent of the chart's 7d/14d/30d horizon toggle.
+ */
+export function meanForecastDailyDemand(
+  record: {
+    districtId: string;
+    medicineId: string;
+    dailyConsumption: number;
+    demandGrowthPct: number;
+  },
+  multiplier = 1,
+): number {
+  return forecastDemand(record, multiplier, 7).forecast.reduce((s, p) => s + p.units, 0) / 7;
+}
+
+/**
  * PROJECTED STOCK-OUT: walk the forecast day by day, subtracting forecast
  * demand from current stock. Stock-out = first day usable inventory hits 0.
  * This replaces stock/Today's-demand as the primary projection method.
@@ -151,29 +169,79 @@ export function projectedStockOutDay(
 }
 
 /**
- * DAYS OF COVER — forecast-weighted: number of days until projected usable
- * inventory reaches zero on the forecast trajectory (not stock/today's usage).
- * Falls back to a capped number when the horizon is never breached.
+ * DAYS OF COVER — canonical definition: current stock ÷ mean forecast daily
+ * demand (the next-7-forecast-day mean, scenario-adjusted). This is a RATIO,
+ * not the stock-out day — the day-by-day depletion walk that locates zero is
+ * a different metric and lives in projectedStockOutDay below.
  */
-export function forecastDaysOfCover(
-  record: { currentStock: number; districtId: string; medicineId: string; dailyConsumption: number; demandGrowthPct: number },
+export function daysOfCoverFromStock(
+  record: {
+    currentStock: number;
+    districtId: string;
+    medicineId: string;
+    dailyConsumption: number;
+    demandGrowthPct: number;
+  },
   multiplier = 1,
 ): number {
-  const { day } = projectedStockOutDay(record, multiplier, 30);
-  if (day !== null) return day;
-  // No breach inside 30d: extrapolate cover from the mean forecast rate.
-  const f = forecastDemand(record, multiplier, 30);
-  const meanDaily = f.forecast.reduce((s, p) => s + p.units, 0) / f.forecast.length;
-  return Math.round((record.currentStock / Math.max(1, meanDaily)) * 10) / 10;
+  const mean = meanForecastDailyDemand(record, multiplier);
+  return record.currentStock / Math.max(1, mean);
 }
 
-/** Reserve target in units for a record under projected demand. */
-export function reserveTargetUnits(
-  record: Pick<InventoryRecordLike, 'reserveThresholdDays'> & { dailyConsumption: number; demandGrowthPct: number },
+/**
+ * Legacy walk-based cover. Kept only as a deprecated alias so unmigrated
+ * call sites keep compiling — the canonical metric is daysOfCoverFromStock.
+ * @deprecated use daysOfCoverFromStock (stock ÷ mean forecast daily demand)
+ */
+export function forecastDaysOfCover(
+  record: {
+    currentStock: number;
+    districtId: string;
+    medicineId: string;
+    dailyConsumption: number;
+    demandGrowthPct: number;
+  },
   multiplier = 1,
 ): number {
-  const base = record.dailyConsumption * (1 + record.demandGrowthPct / 100) * multiplier;
-  return Math.round(record.reserveThresholdDays * base);
+  return daysOfCoverFromStock(record, multiplier);
+}
+
+/**
+ * RESERVE TARGET — canonical definition: reserveThresholdDays × the SAME mean
+ * forecast daily demand used for cover (next-7 forecast days, scenario-
+ * adjusted), rounded to whole units.
+ */
+export function reserveTargetUnits(
+  record: Pick<InventoryRecordLike, 'reserveThresholdDays'> & {
+    districtId: string;
+    medicineId: string;
+    dailyConsumption: number;
+    demandGrowthPct: number;
+  },
+  multiplier = 1,
+): number {
+  const mean = meanForecastDailyDemand(record, multiplier);
+  return Math.round(record.reserveThresholdDays * mean);
+}
+
+/**
+ * RESERVE GAP — canonical definition: reserve target − (current stock +
+ * received quantity), floored at 0. Positive = still below reserve after
+ * receipts land. Exported so no screen keeps an inline copy of the formula.
+ */
+export function reserveGapUnits(
+  record: {
+    currentStock: number;
+    districtId: string;
+    medicineId: string;
+    dailyConsumption: number;
+    demandGrowthPct: number;
+    reserveThresholdDays: number;
+  },
+  multiplier = 1,
+  received = 0,
+): number {
+  return Math.max(0, reserveTargetUnits(record, multiplier) - (record.currentStock + received));
 }
 
 // Minimal structural type to avoid a circular import with src/types.
@@ -187,8 +255,21 @@ interface InventoryRecordLike {
 }
 
 /** Whole-shipment rounding per resource (prototype logistics assumption).
-    Floors so a source is never drawn below its reserve by rounding up. */
+    ORS / paracetamol / amoxicillin / saline ship in 100-unit steps; insulin in
+    50-unit steps. FLOORS, so a source is never drawn below its reserve by
+    rounding up. */
 export function roundShipment(medicineId: string, units: number): number {
   const step = medicineId === 'insulin' ? 50 : 100;
   return Math.max(0, Math.floor(units / step) * step);
+}
+
+/** Smallest whole-shipment quantity ≥ units. Used ONLY to SIZE a plan's
+    requirement, so a sufficiently-supplied plan fills the reserve target in
+    shippable steps instead of stopping just below it (floor-sizing a
+    requirement is what produced phantom "N units short" gaps). Donor
+    draw-downs keep using roundShipment (floor) so a source is never drawn
+    below its reserve by rounding up. */
+export function shipmentCeil(medicineId: string, units: number): number {
+  const step = medicineId === 'insulin' ? 50 : 100;
+  return Math.max(0, Math.ceil(units / step) * step);
 }

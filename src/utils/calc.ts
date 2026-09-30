@@ -1,11 +1,13 @@
 import type { InventoryRecord, District, RiskBandName, RiskFactor, ComputedRisk, AllocationPlan, AllocationLeg, ScenarioState, TransferRecommendation } from '../types';
 import { DISTRICT_COORDS, districts, isColdChain } from '../data/districts';
 import {
-  forecastDaysOfCover,
+  daysOfCoverFromStock,
+  meanForecastDailyDemand,
   projectedStockOutDay,
-  forecastDemand,
+  reserveGapUnits,
   reserveTargetUnits,
   roundShipment,
+  shipmentCeil,
 } from './forecast';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -87,25 +89,57 @@ export function scenarioRecord(r: InventoryRecord, s?: Partial<ScenarioState> | 
   return { ...r, currentStock: effectiveStock(r, s) };
 }
 
-/** Projected daily demand at a scenario multiplier (mean forecast rate). */
-export function projectedDemand(r: InventoryRecord, multiplier = 1): number {
-  const f = forecastDemand(r, multiplier, 7);
-  return f.forecast.reduce((s, p) => s + p.units, 0) / f.forecast.length;
+/**
+ * ONE canonical read-out per inventory line: scenario-adjusted stock, the
+ * shared mean-forecast-daily-demand window, days of cover (stock ÷ mean),
+ * the reserve target (7 × the same mean) and the reserve gap
+ * (target − stock − received). Every page consumes these — no screen keeps
+ * its own copy of the formulas.
+ */
+export function districtLineMetrics(
+  r: InventoryRecord,
+  s?: Partial<ScenarioState> | number,
+  received = 0,
+) {
+  const scen = scenarioOf(s);
+  const stock = effectiveStock(r, scen);
+  const rec = { ...r, currentStock: stock };
+  return {
+    record: rec,
+    scenario: scen,
+    stock,
+    meanDailyDemand: meanForecastDailyDemand(rec, scen.demandMultiplier),
+    daysOfCover: daysOfCoverFromStock(rec, scen.demandMultiplier),
+    reserveTarget: reserveTargetUnits(rec, scen.demandMultiplier),
+    reserveGap: reserveGapUnits(rec, scen.demandMultiplier, received),
+  };
 }
 
 /**
- * DAYS OF COVER — estimated days current inventory supports projected demand
- * on the forecast trajectory (NOT stock ÷ today's usage). Scenario shocks
- * (supply delay, cold-chain incident) reduce the effective stock first.
+ * Projected daily demand — the CANONICAL mean-forecast window (next 7
+ * forecast days, scenario-adjusted). This is the single demand definition
+ * behind cover, reserve target, and reserve gap everywhere.
+ */
+export function projectedDemand(r: InventoryRecord, multiplier = 1): number {
+  return meanForecastDailyDemand(r, multiplier);
+}
+
+/**
+ * DAYS OF COVER — canonical ratio: current stock ÷ mean forecast daily
+ * demand (next-7-forecast-day mean, scenario-adjusted). A RATIO, deliberately
+ * distinct from the stock-out day (the depletion walk in forecast.ts).
+ * Scenario shocks (supply delay, cold-chain incident) reduce the effective
+ * stock first.
  */
 export function daysOfCover(r: InventoryRecord, s?: Partial<ScenarioState> | number): number {
   const scen = scenarioOf(s);
-  return forecastDaysOfCover(scenarioRecord(r, scen), scen.demandMultiplier);
+  return daysOfCoverFromStock(scenarioRecord(r, scen), scen.demandMultiplier);
 }
 
 /**
  * PROJECTED STOCK-OUT — first day the forecast depletion path hits zero.
- * Falls back to a capped 45 (beyond the 30-day projection window).
+ * INDEPENDENT of cover by definition (a walk, not a ratio). Falls back to a
+ * capped 45 (beyond the 30-day projection window).
  */
 export function stockOutDays(r: InventoryRecord, s?: Partial<ScenarioState> | number): number {
   const scen = scenarioOf(s);
@@ -114,20 +148,23 @@ export function stockOutDays(r: InventoryRecord, s?: Partial<ScenarioState> | nu
 
 export function surplusUnits(r: InventoryRecord, s?: Partial<ScenarioState> | number): number {
   const scen = scenarioOf(s);
+  const stock = effectiveStock(r, scen);
   const target = reserveTargetUnits(r, scen.demandMultiplier);
-  return Math.max(0, effectiveStock(r, scen) - target);
+  return Math.max(0, stock - target);
 }
 
-// ── Composite risk score (explainable, reconciling factors) ──────────────────
+// ── Composite risk score (explainable) ───────────────────────────────────────
 //
 // Illustrative prototype weights — the UI labels them as such, never as
-// medically validated values. Contributions below reconcile exactly:
-// Σ(weight × value) = score.
+// medically validated values. Contributions reconcile exactly:
+// Σ(weight × value) = score. The six weights total exactly 1.0; inventory
+// pressure and stock-out proximity are DIFFERENTIATED signals (ratio vs
+// depletion walk), so no underlying signal is double-counted.
 
 export const RISK_WEIGHTS = {
-  inventory: 0.3, // Inventory pressure
+  inventory: 0.35, // Inventory pressure (stock ÷ mean-7 demand ratio)
   demand: 0.2, // Demand acceleration
-  stockOut: 0.25, // Stock-out proximity
+  stockOut: 0.2, // Stock-out proximity (day-by-day depletion walk)
   beds: 0.1, // Bed pressure
   workforce: 0.1, // Workforce gap
   logistics: 0.05, // Logistics vulnerability
@@ -158,8 +195,12 @@ export function riskFactors(
   const scen = scenarioOf(s);
   const doc = daysOfCover(r, scen);
   const so = stockOutDays(r, scen);
+  // Inventory pressure is the cover RATIO (stock ÷ mean-7 forecast demand).
   const inventoryPressure = 100 * Math.max(0, 1 - Math.min(doc, 14) / 14);
   const demandAcceleration = Math.min(r.demandGrowthPct, 100);
+  // Stock-out proximity is the DEPLETION WALK (first day projected stock
+  // reaches zero) — a different metric from the ratio above, not a re-read
+  // of it.
   const stockOutProximity = 100 * Math.max(0, 1 - Math.min(so, 14) / 14);
   const bedPressure = Math.min(100, d.bedUtilization * scen.bedDemandFactor);
   const workforcePressure = Math.min(100, 100 - d.staffAvailability * scen.workforceFactor);
@@ -218,8 +259,12 @@ export function buildAllocationPlan(
   const scen = scenarioOf(s);
   const coverBefore = daysOfCover(shortage, scen);
   const soBefore = stockOutDays(shortage, scen);
+  // Canonical reserve definitions (same mean-7 demand window as cover).
+  // The requirement is SIZED up to whole shipment steps so a plan with enough
+  // sources actually restores the reserve target; donor draw-downs below
+  // stay floored (roundShipment).
   const target = reserveTargetUnits(shortage, scen.demandMultiplier);
-  const required = Math.max(0, target - shortage.currentStock);
+  const required = shipmentCeil(shortage.medicineId, reserveGapUnits(shortage, scen.demandMultiplier));
   const scoreBefore = riskScore(shortageDistrict, shortage, scen);
   const bandBefore = riskBand(scoreBefore);
 
@@ -259,12 +304,12 @@ export function buildAllocationPlan(
     if (avail < 100) continue;
     const qty = roundShipment(shortage.medicineId, Math.min(avail, remaining));
     if (qty <= 0) continue;
-    const sourceCoverAfter = forecastDaysOfCover(
+    const sourceCoverAfter = daysOfCoverFromStock(
       { ...src.record, currentStock: src.record.currentStock - qty },
       scen.demandMultiplier,
     );
     runningDestStock += qty;
-    const destCoverAfterThisLeg = forecastDaysOfCover(
+    const destCoverAfterThisLeg = daysOfCoverFromStock(
       { ...shortage, currentStock: runningDestStock },
       scen.demandMultiplier,
     );
@@ -320,7 +365,7 @@ export function buildAllocationPlan(
     bandBefore,
     bandAfter: riskBand(scoreAfter),
     reason: remainingGap > 0
-      ? `${reason} Shortfall of ${remainingGap.toLocaleString()} units — no eligible source could give more without breaching its own reserve.`
+      ? `${reason} Shortfall of ${remainingGap.toLocaleString()} units — no additional full shipment available under the current rounding rule without a source breaching its own reserve.`
       : reason,
   };
 }
