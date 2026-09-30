@@ -13,13 +13,13 @@ import { BookOpen, Info, X } from 'lucide-react';
 /** One canonical definition per metric. Keep each to a single sentence. */
 export const METRIC_DEFS: Record<string, string> = {
   'Composite risk (0–100, higher = worse)':
-    'Weighted six-factor pressure score for a district and medicine line: inventory 30% · demand 20% · stock-out proximity 25% · beds 10% · workforce 10% · logistics 5%.',
+    'Weighted six-factor pressure score for a district and medicine line: inventory 35% · demand 20% · stock-out proximity 20% · beds 10% · workforce 10% · logistics 5%.',
   'Days of cover':
-    'Days the current stock lasts on the forecast demand trajectory (trend + weekly pattern) — not stock divided by today\u2019s usage.',
+    'Current stock ÷ mean forecast daily demand (mean of the next 7 forecast days, scenario-adjusted) — a ratio, distinct from the projected stock-out day.',
   'Projected stock-out':
-    'First day the forecast depletion path reaches zero, from current inventory plus projected demand; “beyond 30d” means no breach inside the 30-day window.',
+    'First day the day-by-day depletion walk (forecast demand subtracted from stock) reaches zero; “beyond 30d” means no breach inside the 30-day window. A different metric from days of cover.',
   'Reserve target':
-    'Units needed to hold the reserve threshold (7 demo days) of projected demand — the line the allocation engine fills to.',
+    '7 × the same mean forecast daily demand used for days of cover (next-7-forecast-day mean, scenario-adjusted) — the line the allocation engine fills to.',
   'Safe surplus':
     'Units a district holds above its own reserve target; the most it can give without breaching its own reserve.',
   'Priority score (0–100, higher = more urgent)':

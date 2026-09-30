@@ -61,8 +61,9 @@ export function ModelCard({ context = 'forecast' }: { context?: 'forecast' | 'al
                 model uncertainty, not an AI confidence score.
               </li>
               <li>
-                Depletion = projected daily demand path subtracted from on-hand stock → days of cover and the
-                projected stock-out day.
+                Depletion = projected daily demand path subtracted from on-hand stock → the projected stock-out
+                day. <span className="font-semibold text-ink">Days of cover</span> = stock ÷ the mean of the next
+                7 forecast days — a related but distinct ratio.
               </li>
             </ul>
           )}

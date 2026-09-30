@@ -34,7 +34,7 @@ export function KpiCard({ label, value, unit, detail, tone = 'neutral', icon, da
   return (
     <div data-tour={dataTour} className={`rounded-lg border bg-surface p-3 shadow-panel transition duration-150 hover:-translate-y-0.5 hover:shadow-md ${TONE_RING[tone]}`}>
       <div className="flex items-center justify-between">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-450">{label}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-450">{label}</p>
         {icon && <span className="text-slate-450">{icon}</span>}
       </div>
       <p className={`tabular mt-1 text-xl font-bold leading-tight ${TONE_VALUE[tone]}`}>
