@@ -6,32 +6,6 @@ import { useTheme } from '../state/ThemeContext';
 import { EcgMark } from '../components/EcgMark';
 
 /**
- * Official multi-color Google "G" (brand guidelines permit unmodified use).
- */
-function GoogleIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-      <path
-        fill="#4285F4"
-        d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z"
-      />
-      <path
-        fill="#EA4335"
-        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75z"
-      />
-    </svg>
-  );
-}
-
-/**
  * Resource-flow vignette — the HealthFlow network illustration (isometric
  * facilities, corridors, courier) anchored to the district cluster. The source
  * PNG is a tall poster whose bottom third is baked-in text; the SVG viewBox
@@ -56,7 +30,6 @@ export default function Login() {
     supabaseConfigured,
     signInWithPassword,
     signUpWithPassword,
-    signInWithGoogle,
     signInAsDemo,
   } = useAuth();
   const { theme, toggle } = useTheme();
@@ -70,7 +43,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [busy, setBusy] = useState<'form' | 'google' | null>(null);
+  const [busy, setBusy] = useState<'form' | null>(null);
 
   if (user) {
     return <Navigate to={redirect} replace />;
@@ -112,18 +85,6 @@ export default function Login() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong — try again.');
     } finally {
-      setBusy(null);
-    }
-  }
-
-  async function onGoogle() {
-    resetMessages();
-    setBusy('google');
-    try {
-      await signInWithGoogle();
-      // Browser navigates to Google and back; nothing to do on success.
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Google sign-in failed.');
       setBusy(null);
     }
   }
@@ -226,26 +187,6 @@ export default function Login() {
 
             {supabaseConfigured && (
               <>
-                {/* Google OAuth through Supabase */}
-                <button
-                  onClick={onGoogle}
-                  disabled={busy !== null || loading}
-                  className="mt-6 inline-flex w-full items-center justify-center gap-2.5 rounded border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink shadow-sm transition hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ai disabled:opacity-60"
-                >
-                  {busy === 'google' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <GoogleIcon />
-                  )}
-                  {busy === 'google' ? 'Redirecting to Google…' : 'Continue with Google'}
-                </button>
-
-                <div className="my-5 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-widest text-muted">
-                  <span className="h-px flex-1 bg-line" />
-                  or
-                  <span className="h-px flex-1 bg-line" />
-                </div>
-
                 {/* Email + password */}
                 <form onSubmit={onSubmit} noValidate>
                   <label htmlFor="hf-email" className="block text-[11px] font-semibold uppercase tracking-wider text-muted">

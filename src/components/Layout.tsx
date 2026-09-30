@@ -144,7 +144,7 @@ export function Layout() {
                     <p className="truncate text-xs font-semibold text-ink">{user?.name}</p>
                     {user?.email && <p className="truncate text-[10px] text-muted">{user.email}</p>}
                     <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-muted">
-                      {user?.provider === 'google' ? 'Google account' : 'Demo session'}
+                      {user?.provider === 'demo' ? 'Demo session' : 'Email account'}
                     </p>
                   </div>
                   <button
