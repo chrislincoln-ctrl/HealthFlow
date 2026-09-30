@@ -5,16 +5,15 @@ type Theme = 'light' | 'dark';
 
 const STORAGE_KEY = 'healthflow-theme';
 
-/** Priority: manual user choice > stored preference > system > light. */
+/** Priority: a returning visitor's saved choice wins; first-time visitors
+ *  always get LIGHT, regardless of the OS color scheme (the toggle in the
+ *  header persists whatever the user prefers for future visits). */
 function initialTheme(): Theme {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === 'light' || saved === 'dark') return saved;
   } catch {
-    /* storage unavailable — fall through to system */
-  }
-  if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    return 'dark';
+    /* storage unavailable — default below */
   }
   return 'light';
 }
