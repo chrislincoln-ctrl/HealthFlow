@@ -171,7 +171,9 @@ export default function Federation() {
             </div>
             <div className="rounded border border-line px-2.5 py-2">
               <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-450">Modeled districts</dt>
-              <dd className="tabular mt-0.5 text-sm font-bold text-ink">{isDemoNetwork ? summary.districtCount : '—'}</dd>
+              <dd className="tabular mt-0.5 text-sm font-bold text-ink">
+                {isDemoNetwork ? `${summary.demoDistrictCount} of ${summary.districtCount}` : '—'}
+              </dd>
             </div>
             <div className="rounded border border-line px-2.5 py-2">
               <dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-450">
@@ -231,8 +233,8 @@ export default function Federation() {
           <div className="mt-2 rounded border border-ai/30 bg-ai-wash/50 px-3 py-2.5 text-[10px] leading-relaxed text-slate-450 dark:bg-ai/10">
             <p className="font-bold text-ink">How a second real network onboards</p>
             <p className="mt-0.5">
-              Concretely: (1) map the partner&apos;s facility registry and stock feeds into the same InventoryRecord
-              shape this demo hand-authors; (2) point their district table at the shared
+              Concretely: (1) map the partner&apos;s facility registry and stock feeds into the same shared inventory
+              data model this demo uses; (2) point their district table at the shared
               <span className="font-semibold text-ink"> forecast + risk + allocation engine</span> (already
               scenario-driven, no code changes to the math); (3) exchange only model updates or aggregated demand
               signals — never patient-level or operationally sensitive records. The demo's anonymized networks
